@@ -4,23 +4,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"time"
 )
 
 // Item structure holds basic details of the Food Item
 type Item struct {
-	ID             int              `json:"id"`
-	SKU            string           `json:"sku"`
-	VendorCode     string           `json:"vendorCode"`
-	Name           string           `json:"name"`
-	Description    string           `json:"description"`
-	Price          string           `json:"price"`
-	NonVegetarian  bool             `json:"nonVegetarian"`
-	Cuisine        string           `json:"cuisine"`
-	Category       string           `json:"category"`
-	Customizable   bool             `json:"customizable"`
-	AvailableTimes []([2]time.Time) `json:"availableTimes"`
-	Tags           []string         `json:"tags"`
+	ID             int           `json:"id"`
+	SKU            string        `json:"sku"`
+	VendorCode     string        `json:"vendorCode"`
+	Name           string        `json:"name"`
+	Description    string        `json:"description"`
+	Price          float32       `json:"price"`
+	NonVegetarian  bool          `json:"nonVegetarian"`
+	Cuisine        string        `json:"cuisine"`
+	Category       []string      `json:"category"`
+	Customizable   bool          `json:"customizable"`
+	AvailableTimes []([2]string) `json:"availableTimes"`
+	Tags           []string      `json:"tags"`
 }
 
 // FromJSON transforms a JSON based item to Item structure
@@ -79,4 +78,19 @@ func getNextID() int {
 	return lp.ID + 1
 }
 
-var itemList = []*Item{}
+var itemList = []*Item{
+	&Item{
+		ID:             1,
+		SKU:            "jj3d-48dk-3sk8-3mk9",
+		VendorCode:     "dd33-gk98-8kdx-8893",
+		Name:           "Masala Dosai",
+		Description:    "Rice batter toasted circular on tava filled with mashed potatoes",
+		Price:          43.75,
+		NonVegetarian:  false,
+		Cuisine:        "South Indian",
+		Category:       []string{"Breakfast", "Dinner"},
+		Customizable:   false,
+		AvailableTimes: [][2]string{{"6:00", "11:00"}, {"17:00", "22:30"}},
+		Tags:           []string{"Dosa", "Masal Dosa", "South Indian", "Dosai"},
+	},
+}
