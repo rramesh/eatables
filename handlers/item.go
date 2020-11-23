@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -11,17 +12,17 @@ import (
 	"github.com/rramesh/eatables/data"
 )
 
-// Items handler struct contains logger reference
+// Items is a http.Handler
 type Items struct {
 	l *log.Logger
 }
 
-//NewItems creates a new handler
+//NewItems creates a items handler with the given logger
 func NewItems(l *log.Logger) *Items {
 	return &Items{l}
 }
 
-//GetItems returns the item list
+//GetItems returns the items from the data store
 func (items *Items) GetItems(rw http.ResponseWriter, r *http.Request) {
 	items.l.Println("Handle Get Items")
 	itemList := data.GetItems()
@@ -31,7 +32,7 @@ func (items *Items) GetItems(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//AddItem adds a new item to the item list
+//AddItem adds a new item to the data store
 func (items *Items) AddItem(rw http.ResponseWriter, r *http.Request) {
 	items.l.Println("Handle POST Item")
 	it := r.Context().Value(KeyItem{}).(data.Item)
@@ -39,7 +40,7 @@ func (items *Items) AddItem(rw http.ResponseWriter, r *http.Request) {
 	items.l.Printf("Prod: %#v", it)
 }
 
-// UpdateItem updates an item in the item list
+// UpdateItem updates an item in the data store
 func (items *Items) UpdateItem(rw http.ResponseWriter, r *http.Request) {
 	items.l.Println("Handle PUT Item")
 
@@ -65,8 +66,8 @@ func (items *Items) UpdateItem(rw http.ResponseWriter, r *http.Request) {
 	items.l.Printf("Prod: %#v", it)
 }
 
-//KeyItem is Key to the Item request from body,
-// to pass to the router after validating request body through middleware
+// KeyItem is item request from body, to pass back to request context
+// after validating request body through middleware
 type KeyItem struct{}
 
 //MiddlewareValidateItem validates JSON from request body before passing back to router
@@ -75,7 +76,19 @@ func (items Items) MiddlewareValidateItem(next http.Handler) http.Handler {
 		it := data.Item{}
 		err := it.FromJSON(r.Body)
 		if err != nil {
+			items.l.Println("[ERROR] Deserializing JSON")
 			http.Error(rw, "Unable to unmarshall JSON", http.StatusBadRequest)
+			return
+		}
+		err = it.Validate()
+		if err != nil {
+			items.l.Println("[ERROR] Validation Failed")
+			http.Error(
+				rw,
+				fmt.Sprintf("Error validation input data, %s", err),
+				http.StatusBadRequest,
+			)
+			return
 		}
 		ctx := context.WithValue(r.Context(), KeyItem{}, it)
 		r = r.WithContext(ctx)
