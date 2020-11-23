@@ -9,6 +9,8 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/gorilla/mux"
+
 	"github.com/rramesh/eatables/handlers"
 )
 
@@ -17,9 +19,17 @@ func main() {
 
 	ih := handlers.NewItems(l)
 
-	sm := http.NewServeMux()
+	sm := mux.NewRouter()
+	getRouter := sm.Methods(http.MethodGet).Subrouter()
+	getRouter.HandleFunc("/", ih.GetItems)
 
-	sm.Handle("/", ih)
+	postRouter := sm.Methods(http.MethodPost).Subrouter()
+	postRouter.HandleFunc("/", ih.AddItem)
+	postRouter.Use(ih.MiddlewareValidateItem)
+
+	putRouter := sm.Methods(http.MethodPut).Subrouter()
+	putRouter.HandleFunc("/{id:[0-9]+}", ih.UpdateItem)
+	putRouter.Use(ih.MiddlewareValidateItem)
 
 	s := &http.Server{
 		Addr:         ":9090",

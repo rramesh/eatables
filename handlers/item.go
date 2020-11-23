@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"log"
 	"net/http"
-	"regexp"
 	"strconv"
+
+	"github.com/gorilla/mux"
 
 	"github.com/rramesh/eatables/data"
 )
@@ -19,48 +21,8 @@ func NewItems(l *log.Logger) *Items {
 	return &Items{l}
 }
 
-func (items *Items) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
-	if r.Method == http.MethodGet {
-		items.getItems(rw, r)
-		return
-	}
-
-	if r.Method == http.MethodPost {
-		items.addItem(rw, r)
-		return
-	}
-
-	if r.Method == http.MethodPut {
-		rgx := regexp.MustCompile(`([0-9]+)`)
-		nos := rgx.FindAllStringSubmatch(r.URL.Path, -1)
-
-		if len(nos) != 1 {
-			items.l.Println("Invalid URI, more than 1 ID")
-			http.Error(rw, "Invalid URL, must specifiy a proper ID", http.StatusBadRequest)
-			return
-		}
-
-		if len(nos[0]) != 2 {
-			items.l.Println("Invalid URI, more than 1 Capture Group")
-			http.Error(rw, "Invalid URL, must specifiy a proper ID", http.StatusBadRequest)
-			return
-		}
-		idString := nos[0][1]
-		id, err := strconv.Atoi(idString)
-		if err != nil {
-			items.l.Println("Invalid URI, ID not Parseable")
-			http.Error(rw, "Unable to extract ID", http.StatusBadRequest)
-			return
-		}
-		items.updateItem(id, rw, r)
-		return
-	}
-
-	// catch all
-	rw.WriteHeader(http.StatusMethodNotAllowed)
-}
-
-func (items *Items) getItems(rw http.ResponseWriter, r *http.Request) {
+//GetItems returns the item list
+func (items *Items) GetItems(rw http.ResponseWriter, r *http.Request) {
 	items.l.Println("Handle Get Items")
 	itemList := data.GetItems()
 	err := itemList.ToJSON(rw)
@@ -69,25 +31,28 @@ func (items *Items) getItems(rw http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (items *Items) addItem(rw http.ResponseWriter, r *http.Request) {
+//AddItem adds a new item to the item list
+func (items *Items) AddItem(rw http.ResponseWriter, r *http.Request) {
 	items.l.Println("Handle POST Item")
-	it := &data.Item{}
-	err := it.FromJSON(r.Body)
-	if err != nil {
-		http.Error(rw, "Unable to unmarshall JSON", http.StatusBadRequest)
-	}
-	data.AddItem(it)
-	items.l.Printf("Prod: %#v", *it)
+	it := r.Context().Value(KeyItem{}).(data.Item)
+	data.AddItem(&it)
+	items.l.Printf("Prod: %#v", it)
 }
 
-func (items *Items) updateItem(id int, rw http.ResponseWriter, r *http.Request) {
+// UpdateItem updates an item in the item list
+func (items *Items) UpdateItem(rw http.ResponseWriter, r *http.Request) {
 	items.l.Println("Handle PUT Item")
-	it := &data.Item{}
-	err := it.FromJSON(r.Body)
+
+	vars := mux.Vars(r)
+
+	id, err := strconv.Atoi(vars["id"])
 	if err != nil {
-		http.Error(rw, "Unable to unmarshall JSON", http.StatusBadRequest)
+		http.Error(rw, "ID is not a number", http.StatusBadRequest)
+		return
 	}
-	err = data.UpdateItem(id, it)
+
+	it := r.Context().Value(KeyItem{}).(data.Item)
+	err = data.UpdateItem(id, &it)
 	if err == data.ErrItemNotFound {
 		http.Error(rw, "Item Not Found", http.StatusNotFound)
 		return
@@ -97,5 +62,23 @@ func (items *Items) updateItem(id int, rw http.ResponseWriter, r *http.Request) 
 		http.Error(rw, "Item Not Found", http.StatusInternalServerError)
 		return
 	}
-	items.l.Printf("Prod: %#v", *it)
+	items.l.Printf("Prod: %#v", it)
+}
+
+//KeyItem is Key to the Item request from body,
+// to pass to the router after validating request body through middleware
+type KeyItem struct{}
+
+//MiddlewareValidateItem validates JSON from request body before passing back to router
+func (items Items) MiddlewareValidateItem(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		it := data.Item{}
+		err := it.FromJSON(r.Body)
+		if err != nil {
+			http.Error(rw, "Unable to unmarshall JSON", http.StatusBadRequest)
+		}
+		ctx := context.WithValue(r.Context(), KeyItem{}, it)
+		r = r.WithContext(ctx)
+		next.ServeHTTP(rw, r)
+	})
 }
