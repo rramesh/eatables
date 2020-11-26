@@ -11,25 +11,30 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"github.com/rramesh/eatables/data"
 	"github.com/rramesh/eatables/handlers"
 )
 
 func main() {
 	l := log.New(os.Stdout, "hello-api>", log.LstdFlags)
-
-	ih := handlers.NewItems(l)
+	v := data.NewValidation()
+	ih := handlers.NewItems(l, v)
 
 	sm := mux.NewRouter()
 	getRouter := sm.Methods(http.MethodGet).Subrouter()
-	getRouter.HandleFunc("/", ih.GetItems)
+	getRouter.HandleFunc("/items", ih.ListAll)
+	getRouter.HandleFunc("/items/{id:[0-9]+}", ih.ListSingle)
 
 	postRouter := sm.Methods(http.MethodPost).Subrouter()
-	postRouter.HandleFunc("/", ih.AddItem)
+	postRouter.HandleFunc("/items", ih.Create)
 	postRouter.Use(ih.MiddlewareValidateItem)
 
 	putRouter := sm.Methods(http.MethodPut).Subrouter()
-	putRouter.HandleFunc("/{id:[0-9]+}", ih.UpdateItem)
+	putRouter.HandleFunc("/items", ih.UpdateItem)
 	putRouter.Use(ih.MiddlewareValidateItem)
+
+	deleteRouter := sm.Methods(http.MethodDelete).Subrouter()
+	deleteRouter.HandleFunc("/items/{id:[0-9]+}", ih.Delete)
 
 	// create a new server
 	s := &http.Server{

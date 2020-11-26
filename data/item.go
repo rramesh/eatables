@@ -1,13 +1,8 @@
 package data
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"regexp"
 	"time"
-
-	"github.com/go-playground/validator"
 )
 
 // Item defines the structure for an API Food Item
@@ -29,81 +24,66 @@ type Item struct {
 	UpdatedAt         string        `json:"-"`
 }
 
-// FromJSON transforms a JSON based item to Item structure
-func (it *Item) FromJSON(r io.Reader) error {
-	e := json.NewDecoder(r)
-	return e.Decode(it)
-}
-
-// Validate the Item
-func (it *Item) Validate() error {
-	v := validator.New()
-	v.RegisterValidation("uuid", validateUUID)
-	return v.Struct(it)
-}
-
-//Validate UUID
-func validateUUID(fl validator.FieldLevel) bool {
-	//UUID must be 12 length alphanumeric
-	re := regexp.MustCompile(`[a-zA-Z0-9]{12}`)
-	matches := re.FindAllString(fl.Field().String(), -1)
-	if len(matches) != 1 {
-		return false
-	}
-	return true
-}
-
 // Items is a collection of Item
 type Items []*Item
 
-// ToJSON serializes the contents of the collection to JSON
-// NewEncoder provides better performance than json.Unmarshal as it does not
-// have to buffer the output into an in memory slice of bytes
-// this reduces allocations and the overheads of the service
-//
-// https://golang.org/pkg/encoding/json/#NewEncoder
-func (it *Items) ToJSON(w io.Writer) error {
-	e := json.NewEncoder(w)
-	return e.Encode(it)
-}
+// ErrItemNotFound is custom error message when Item not found in DB
+var ErrItemNotFound = fmt.Errorf("Item Not Found")
 
 // GetItems returns static collection of Items
 func GetItems() Items {
 	return itemList
 }
 
-// AddItem adds a new Item to the Item collection
-func AddItem(it *Item) {
+// GetItemByID returns a particular Item identified by ID
+// Returns ErrItemNotFound when no item with given ID is found
+func GetItemByID(id int) (*Item, error) {
+	idx, item := findIndexAndItemByID(id)
+	if idx == -1 {
+		return nil, ErrItemNotFound
+	}
+	return item, nil
+}
+
+// AddNewItem creates a new Item to the Item DB
+func AddNewItem(it Item) {
 	it.ID = getNextID()
 	it.CreatedAt = time.Now().UTC().String()
 	it.UpdatedAt = time.Now().UTC().String()
-	itemList = append(itemList, it)
+	itemList = append(itemList, &it)
 }
 
-// UpdateItem updates a Item in the collection
-func UpdateItem(id int, it *Item) error {
-	itWas, pos, err := findItem(id)
+// UpdateItem updates an Item with the given ID
+func UpdateItem(it Item) error {
+	idx, itWas := findIndexAndItemByID(it.ID)
 
-	if err != nil {
-		return err
+	if idx == -1 {
+		return ErrItemNotFound
 	}
-	it.ID = id
+
 	it.CreatedAt = itWas.CreatedAt
 	it.UpdatedAt = time.Now().UTC().String()
-	itemList[pos] = it
+	itemList[idx] = &it
 	return nil
 }
 
-// ErrItemNotFound is custom error message when Item not found in DB
-var ErrItemNotFound = fmt.Errorf("Item Not Found")
+// DeleteItem removes an Item from the Item DB
+func DeleteItem(id int) error {
+	idx, _ := findIndexAndItemByID(id)
+	if idx == -1 {
+		return ErrItemNotFound
+	}
+	itemList = itemList[:idx+copy(itemList[idx:], itemList[idx+1:])]
+	return nil
+}
 
-func findItem(id int) (*Item, int, error) {
-	for i, p := range itemList {
-		if p.ID == id {
-			return p, i, nil
+func findIndexAndItemByID(id int) (int, *Item) {
+	for idx, item := range itemList {
+		if item.ID == id {
+			return idx, item
 		}
 	}
-	return nil, -1, ErrItemNotFound
+	return -1, nil
 }
 
 // GetNextID picks up the last element in the Item list and adds 1 to the ID value
