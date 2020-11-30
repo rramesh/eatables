@@ -5,23 +5,77 @@ import (
 	"time"
 )
 
+// swagger:model
+
 // Item defines the structure for an API Food Item
 type Item struct {
-	ID                int           `json:"id"`
-	SKU               string        `json:"sku" validate:"required,uuid"`
-	VendorCode        string        `json:"vendorCode" validate:"required,uuid"`
-	Name              string        `json:"name" validate:"required"`
-	Description       string        `json:"description" validate:"required"`
-	Price             float32       `json:"price" validate:"gt=0.0"`
-	NonVegetarian     bool          `json:"nonVegetarian"`
-	Cuisine           string        `json:"cuisine"`
-	Category          []string      `json:"category"`
-	Customizable      bool          `json:"customizable"`
-	AvailableTimes    []([2]string) `json:"availableTimes"`
-	Tags              []string      `json:"tags"`
-	DontMakeItAnymore bool          `json:"dontMakeItAnymore"`
-	CreatedAt         string        `json:"-"`
-	UpdatedAt         string        `json:"-"`
+	// The ID of this Item
+	// required: false
+	// min: 1
+	ID int `json:"id"`
+
+	// The SKU of this Item. UUID format
+	// required: true
+	// pattern: [a-zA-Z0-9]{12}
+	// Example: AB89C89F3897XMC7
+	SKU string `json:"sku" validate:"required,uuid"`
+
+	// The Vendor Code of this Item. UUID format
+	// required: true
+	// pattern: [a-zA-Z0-9]{12}
+	// Example: 3X89238FASP287YR
+	VendorCode string `json:"vendorCode" validate:"required,uuid"`
+	// Name of this Item
+	// required: true
+	// Example: Masala Dosa
+	Name string `json:"name" validate:"required"`
+	// Description of this Item
+	// required: true
+	// Example: Made from rice, lentils, potato, fenugreek, and curry leaves, and served with chutneys and sambar.
+	Description string `json:"description" validate:"required"`
+
+	// Price of this Item
+	// required: true
+	// min: 0.01
+	// Example: 75.00
+	Price float32 `json:"price" validate:"gt=0.0"`
+
+	// Whether this Item is Non-vegetarian
+	// Defaults to False if not provided - Item is Vegetarian by default
+	// Example: false
+	NonVegetarian bool `json:"nonVegetarian"`
+
+	// Cuisine this Item belongs to
+	// Example: South Indian
+	//          Chinese
+	Cuisine string `json:"cuisine"`
+
+	// Category this Item belongs to, array of Strings. Used for grouping Items under menu
+	// Example: ["Breakfast", "Dinner"]
+	//          ["Snacks", "Anytime"]
+	Category []string `json:"category"`
+
+	// Is the Item Customizable. Defaults to False
+	// Example: false
+	Customizable bool `json:"customizable"`
+
+	// What times this item is available.
+	// Range provided as Array of Array of two strings
+	// Example: [["7:00", "11:30"], ["17:00", "22:30"]]
+	AvailableTimes []([2]string) `json:"availableTimes"`
+
+	// Tags to be associated with this Item.
+	// Helpful as search keywords
+	// Example: ["Yummy", "South Indian", "Dosa", "Special Dosa"]
+	Tags []string `json:"tags"`
+
+	// Is the Item still made? Active?
+	// Defaults to False, meaning Item is still being made and active
+	// Example: false
+	DontMakeItAnymore bool `json:"dontMakeItAnymore"`
+
+	CreatedAt string `json:"-"`
+	UpdatedAt string `json:"-"`
 }
 
 // Items is a collection of Item

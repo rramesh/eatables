@@ -9,13 +9,20 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/go-openapi/runtime/middleware"
 	"github.com/gorilla/mux"
 
 	"github.com/rramesh/eatables/data"
 	"github.com/rramesh/eatables/handlers"
+
+	"github.com/nicholasjackson/env"
 )
 
+var bindAddress = env.String("BIND_ADDRESS", false, ":9090", "Bind address for the Server")
+
 func main() {
+	env.Parse()
+
 	l := log.New(os.Stdout, "hello-api>", log.LstdFlags)
 	v := data.NewValidation()
 	ih := handlers.NewItems(l, v)
@@ -30,15 +37,21 @@ func main() {
 	postRouter.Use(ih.MiddlewareValidateItem)
 
 	putRouter := sm.Methods(http.MethodPut).Subrouter()
-	putRouter.HandleFunc("/items", ih.UpdateItem)
+	putRouter.HandleFunc("/items", ih.Update)
 	putRouter.Use(ih.MiddlewareValidateItem)
 
 	deleteRouter := sm.Methods(http.MethodDelete).Subrouter()
 	deleteRouter.HandleFunc("/items/{id:[0-9]+}", ih.Delete)
 
+	// API Documentation
+	opts := middleware.RedocOpts{SpecURL: "/swagger.yaml"}
+	sh := middleware.Redoc(opts, nil)
+	getRouter.HandleFunc("/docs", sh.ServeHTTP)
+	getRouter.HandleFunc("/swagger.yaml", http.FileServer(http.Dir("./")).ServeHTTP)
+
 	// create a new server
 	s := &http.Server{
-		Addr:         ":9090",           //configure the bind address
+		Addr:         *bindAddress,      //configure the bind address
 		Handler:      sm,                // set the default handler
 		ErrorLog:     l,                 // set the logger for the server
 		IdleTimeout:  120 * time.Second, // max time for connections using TCP Keep-Alive

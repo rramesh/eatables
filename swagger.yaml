@@ -1,0 +1,242 @@
+basePath: /
+consumes:
+- application/json
+definitions:
+  GenericError:
+    description: GenericError holds a message string to be sent as JSON
+    properties:
+      Message:
+        type: string
+    type: object
+    x-go-package: github.com/rramesh/eatables/handlers
+  Item:
+    description: Item defines the structure for an API Food Item
+    properties:
+      availableTimes:
+        description: |-
+          What times this item is available.
+          Range provided as Array of Array of two strings
+        example:
+        - - "7:00"
+          - "11:30"
+        - - "17:00"
+          - "22:30"
+        items:
+          items:
+            type: string
+          type: array
+        type: array
+        x-go-name: AvailableTimes
+      category:
+        description: Category this Item belongs to, array of Strings. Used for grouping Items under menu
+        example:
+        - Breakfast
+        - Dinner
+        items:
+          type: string
+        type: array
+        x-go-name: Category
+      cuisine:
+        description: Cuisine this Item belongs to
+        example: South Indian
+        type: string
+        x-go-name: Cuisine
+      customizable:
+        description: Is the Item Customizable. Defaults to False
+        example: false
+        type: boolean
+        x-go-name: Customizable
+      description:
+        description: Description of this Item
+        example: Made from rice, lentils, potato, fenugreek, and curry leaves, and served with chutneys and sambar.
+        type: string
+        x-go-name: Description
+      dontMakeItAnymore:
+        description: |-
+          Is the Item still made? Active?
+          Defaults to False, meaning Item is still being made and active
+        example: false
+        type: boolean
+        x-go-name: DontMakeItAnymore
+      id:
+        description: The ID of this Item
+        format: int64
+        minimum: 1
+        type: integer
+        x-go-name: ID
+      name:
+        description: Name of this Item
+        example: Masala Dosa
+        type: string
+        x-go-name: Name
+      nonVegetarian:
+        description: |-
+          Whether this Item is Non-vegetarian
+          Defaults to False if not provided - Item is Vegetarian by default
+        example: false
+        type: boolean
+        x-go-name: NonVegetarian
+      price:
+        description: Price of this Item
+        example: 75
+        format: float
+        minimum: 0.01
+        type: number
+        x-go-name: Price
+      sku:
+        description: The SKU of this Item. UUID format
+        example: AB89C89F3897XMC7
+        pattern: '[a-zA-Z0-9]{12}'
+        type: string
+        x-go-name: SKU
+      tags:
+        description: |-
+          Tags to be associated with this Item.
+          Helpful as search keywords
+        example:
+        - Yummy
+        - South Indian
+        - Dosa
+        - Special Dosa
+        items:
+          type: string
+        type: array
+        x-go-name: Tags
+      vendorCode:
+        description: The Vendor Code of this Item. UUID format
+        example: 3X89238FASP287YR
+        pattern: '[a-zA-Z0-9]{12}'
+        type: string
+        x-go-name: VendorCode
+    required:
+    - sku
+    - vendorCode
+    - name
+    - description
+    - price
+    type: object
+    x-go-package: github.com/rramesh/eatables/data
+  ValidationError:
+    description: ValidationError holds a slice of error messages to be sent as JSON
+    properties:
+      Message:
+        items:
+          type: string
+        type: array
+    type: object
+    x-go-package: github.com/rramesh/eatables/handlers
+info:
+  description: Documentation for Eatables API
+  title: '- classification of eatables API'
+  version: 1.0.0
+paths:
+  /items:
+    get:
+      description: Returns a list of Eatable Items
+      operationId: listItems
+      responses:
+        "200":
+          $ref: '#/responses/itemResponse'
+      tags:
+      - items
+    post:
+      description: Create a new Eatable item
+      operationId: createItem
+      parameters:
+      - description: |-
+          Item data structure to Update or Create.
+          Note: the id field is ignored by update and create operations
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/Item'
+      responses:
+        "200":
+          $ref: '#/responses/itemResponse'
+        "422":
+          $ref: '#/responses/errorValidation'
+        "501":
+          $ref: '#/responses/errorResponse'
+      tags:
+      - items
+    put:
+      description: Update an eatable item's details
+      operationId: updateItem
+      parameters:
+      - description: |-
+          Item data structure to Update or Create.
+          Note: the id field is ignored by update and create operations
+        in: body
+        name: Body
+        required: true
+        schema:
+          $ref: '#/definitions/Item'
+      - description: The id of the item for which the operation relates
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+        x-go-name: ID
+      responses:
+        "201":
+          $ref: '#/responses/noContentResponse'
+        "404":
+          $ref: '#/responses/errorResponse'
+        "422":
+          $ref: '#/responses/errorValidation'
+      tags:
+      - items
+  /items/{id}:
+    delete:
+      description: Deleta an eatable Item
+      operationId: deleteItem
+      parameters:
+      - description: The ID of the Item to be deleted from the DB
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+        x-go-name: ID
+      responses:
+        "201":
+          $ref: '#/responses/noContentResponse'
+        "404":
+          $ref: '#/responses/errorResponse'
+        "501":
+          $ref: '#/responses/errorResponse'
+      tags:
+      - items
+    get:
+      description: Return a specific Eatable item from the database
+      operationId: listSingle
+      responses:
+        "200":
+          $ref: '#/responses/itemResponse'
+        "404":
+          $ref: '#/responses/errorResponse'
+      tags:
+      - items
+produces:
+- application/json
+responses:
+  errorResponse:
+    description: Generic error message returned as a string
+    schema:
+      $ref: '#/definitions/GenericError'
+  errorValidation:
+    description: Validation errors defined as an array of strings
+    schema:
+      $ref: '#/definitions/ValidationError'
+  itemResponse:
+    schema:
+      items:
+        $ref: '#/definitions/Item'
+      type: array
+  noContentResponse:
+    description: No content is returned by this API endpoint
+schemes:
+- http
+swagger: "2.0"

@@ -15,7 +15,7 @@ func (items Items) MiddlewareValidateItem(next http.Handler) http.Handler {
 		if err != nil {
 			items.l.Println("[ERROR] Deserializing JSON")
 			rw.WriteHeader(http.StatusBadRequest)
-			data.ToJSON(&GenericErrorMessage{Message: err.Error()}, rw)
+			data.ToJSON(&GenericError{Message: err.Error()}, rw)
 			return
 		}
 
@@ -23,7 +23,7 @@ func (items Items) MiddlewareValidateItem(next http.Handler) http.Handler {
 		if len(errs) != 0 {
 			items.l.Println("[ERROR] Item request validation failed")
 			rw.WriteHeader(http.StatusUnprocessableEntity)
-			data.ToJSON(&ValidationErrorMessage{Message: errs.Errors()}, rw)
+			data.ToJSON(&ValidationError{Message: errs.Errors()}, rw)
 			return
 		}
 

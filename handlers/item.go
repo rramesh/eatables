@@ -25,13 +25,13 @@ func NewItems(l *log.Logger, v *data.Validation) *Items {
 	return &Items{l, v}
 }
 
-// GenericErrorMessage holds a message string to be sent as JSON
-type GenericErrorMessage struct {
+// GenericError holds a message string to be sent as JSON
+type GenericError struct {
 	Message string
 }
 
-// ValidationErrorMessage holds a slice of error messages to be sent as JSON
-type ValidationErrorMessage struct {
+// ValidationError holds a slice of error messages to be sent as JSON
+type ValidationError struct {
 	Message []string
 }
 

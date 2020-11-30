@@ -6,6 +6,14 @@ import (
 	"github.com/rramesh/eatables/data"
 )
 
+// swagger:route DELETE /items/{id} items deleteItem
+// Deleta an eatable Item
+//
+// responses:
+//	201: noContentResponse
+//  404: errorResponse
+//  501: errorResponse
+
 // Delete returns a specific item with ID passed in the URL
 func (items *Items) Delete(rw http.ResponseWriter, r *http.Request) {
 	id := getItemID(r)
@@ -16,7 +24,7 @@ func (items *Items) Delete(rw http.ResponseWriter, r *http.Request) {
 	case data.ErrItemNotFound:
 		items.l.Println("[Error] Could not find item by ID ", id)
 		rw.WriteHeader(http.StatusNotFound)
-		data.ToJSON(&GenericErrorMessage{Message: err.Error()}, rw)
+		data.ToJSON(&GenericError{Message: err.Error()}, rw)
 		return
 	default:
 		items.l.Println("[Error] Error Deleting Item with ID ", id)
