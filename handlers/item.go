@@ -49,3 +49,14 @@ func getItemID(r *http.Request) int {
 	}
 	return id
 }
+
+// getUUID gets the UUID from the URL
+func getUUID(r *http.Request) string {
+	vars := mux.Vars(r)
+	uuid := vars["uuid"]
+	if uuid == "" {
+		// Should never have happened
+		panic("UUID is missing/empty in the Path. Should have been handled by the router")
+	}
+	return uuid
+}

@@ -3,12 +3,13 @@ consumes:
 - application/json
 definitions:
   GenericError:
-    description: GenericError holds a message string to be sent as JSON
+    description: GenericError GenericError GenericError holds a message string to be sent as JSON
     properties:
       Message:
+        description: message
         type: string
     type: object
-    x-go-package: github.com/rramesh/eatables/handlers
+    x-go-package: github.com/rramesh/eatables/sdk/models
   Item:
     description: Item defines the structure for an API Food Item
     properties:
@@ -109,22 +110,23 @@ definitions:
         type: string
         x-go-name: VendorCode
     required:
+    - description
+    - name
+    - price
     - sku
     - vendorCode
-    - name
-    - description
-    - price
     type: object
     x-go-package: github.com/rramesh/eatables/data
   ValidationError:
-    description: ValidationError holds a slice of error messages to be sent as JSON
+    description: ValidationError ValidationError ValidationError holds a slice of error messages to be sent as JSON
     properties:
       Message:
+        description: message
         items:
           type: string
         type: array
     type: object
-    x-go-package: github.com/rramesh/eatables/handlers
+    x-go-package: github.com/rramesh/eatables/sdk/models
 info:
   description: Documentation for Eatables API
   title: '- classification of eatables API'
@@ -172,13 +174,6 @@ paths:
         required: true
         schema:
           $ref: '#/definitions/Item'
-      - description: The id of the item for which the operation relates
-        format: int64
-        in: path
-        name: id
-        required: true
-        type: integer
-        x-go-name: ID
       responses:
         "201":
           $ref: '#/responses/noContentResponse'
@@ -193,7 +188,7 @@ paths:
       description: Deleta an eatable Item
       operationId: deleteItem
       parameters:
-      - description: The ID of the Item to be deleted from the DB
+      - description: The id of the item for which the operation relates
         format: int64
         in: path
         name: id
@@ -211,7 +206,51 @@ paths:
       - items
     get:
       description: Return a specific Eatable item from the database
-      operationId: listSingle
+      operationId: listSingleItem
+      parameters:
+      - description: The id of the item for which the operation relates
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+        x-go-name: ID
+      responses:
+        "200":
+          $ref: '#/responses/itemResponse'
+        "404":
+          $ref: '#/responses/errorResponse'
+      tags:
+      - items
+  /items/sku/{uuid}:
+    get:
+      description: Returns an item by SKU (UUID)
+      operationId: listItemBySKU
+      parameters:
+      - description: The UUID of the item for which the operation relates
+        in: path
+        name: uuid
+        required: true
+        type: string
+        x-go-name: UUID
+      responses:
+        "200":
+          $ref: '#/responses/itemResponse'
+        "404":
+          $ref: '#/responses/errorResponse'
+      tags:
+      - items
+  /items/vendor/{uuid}:
+    get:
+      description: Returns a list of items by Vendor Code (UUID)
+      operationId: listItemsByVendor
+      parameters:
+      - description: The UUID of the item for which the operation relates
+        in: path
+        name: uuid
+        required: true
+        type: string
+        x-go-name: UUID
       responses:
         "200":
           $ref: '#/responses/itemResponse'
@@ -231,6 +270,7 @@ responses:
     schema:
       $ref: '#/definitions/ValidationError'
   itemResponse:
+    description: A list of eatable items returned in the response
     schema:
       items:
         $ref: '#/definitions/Item'

@@ -36,8 +36,8 @@ type errorValidationWrapper struct {
 	Body ValidationError
 }
 
-// swagger:response itemResponse
 // A list of eatable items returned in the response
+// swagger:response itemResponse
 type itemResponseWrapper struct {
 	// All Products in the DB
 	// in: body
@@ -65,10 +65,18 @@ type itemParamsWrapper struct {
 	Body data.Item
 }
 
-// swagger:parameters updateItem
+// swagger:parameters listSingleItem deleteItem
 type itemIDParamsWrapper struct {
 	// The id of the item for which the operation relates
 	// in: path
 	// required: true
 	ID int `json:"id"`
+}
+
+// swagger:parameters listItemBySKU listItemsByVendor
+type itemUUIDParamsWrapper struct {
+	// The UUID of the item for which the operation relates
+	// in: path
+	// required: true
+	UUID string `json:"uuid"`
 }

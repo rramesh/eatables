@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/go-openapi/runtime/middleware"
+	gohandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 
 	"github.com/rramesh/eatables/data"
@@ -31,6 +32,8 @@ func main() {
 	getRouter := sm.Methods(http.MethodGet).Subrouter()
 	getRouter.HandleFunc("/items", ih.ListAll)
 	getRouter.HandleFunc("/items/{id:[0-9]+}", ih.ListSingle)
+	getRouter.HandleFunc("/items/sku/{uuid}", ih.ListItemBySKU)
+	getRouter.HandleFunc("/items/vendor/{uuid}", ih.ListItemsByVendor)
 
 	postRouter := sm.Methods(http.MethodPost).Subrouter()
 	postRouter.HandleFunc("/items", ih.Create)
@@ -49,10 +52,12 @@ func main() {
 	getRouter.HandleFunc("/docs", sh.ServeHTTP)
 	getRouter.HandleFunc("/swagger.yaml", http.FileServer(http.Dir("./")).ServeHTTP)
 
+	ch := gohandlers.CORS(gohandlers.AllowedOrigins([]string{"*"}))
+
 	// create a new server
 	s := &http.Server{
 		Addr:         *bindAddress,      //configure the bind address
-		Handler:      sm,                // set the default handler
+		Handler:      ch(sm),            // set the default handler
 		ErrorLog:     l,                 // set the logger for the server
 		IdleTimeout:  120 * time.Second, // max time for connections using TCP Keep-Alive
 		ReadTimeout:  1 * time.Second,   // max time to read request from the client
