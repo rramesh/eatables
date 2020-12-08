@@ -16,9 +16,9 @@ import (
 //  422: errorValidation
 func (items *Items) Update(rw http.ResponseWriter, r *http.Request) {
 	it := r.Context().Value(KeyItem{}).(data.Item)
-	items.l.Println("[Debug] Updating Item with SKU ", it.SKU)
+	items.l.Debug("Updating Item", "SKU", it.SKU)
 
-	err := data.UpdateItem(it)
+	err := items.itemDB.UpdateItem(it)
 	if err == data.ErrItemNotFound {
 		rw.Header().Add("Content-Type", "application/json")
 		rw.WriteHeader(http.StatusNotFound)
@@ -28,10 +28,9 @@ func (items *Items) Update(rw http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
-		items.l.Println("[Error] Error Updating Item")
-		items.l.Println("[Error]", err)
+		items.l.Error("Error Updating Item", "error", err)
 		return
 	}
 
-	items.l.Println("[Debug] Item with SKU", it.SKU, " updated successfully")
+	items.l.Debug("Item updated successfully", "SKU", it.SKU)
 }

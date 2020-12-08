@@ -16,21 +16,20 @@ import (
 //  501: errorResponse
 func (items *Items) Delete(rw http.ResponseWriter, r *http.Request) {
 	id := getItemID(r)
-	items.l.Println("[Debug] Deleting Item with ID ", id)
-	err := data.DeleteItem(id)
+	items.l.Debug("Deleting Item", "ID", id)
+	err := items.itemDB.DeleteItem(id)
 	switch err {
 	case nil:
 	case data.ErrItemNotFound:
-		items.l.Println("[Error] Could not find item by ID ", id)
+		items.l.Error("Item not found", "ID", id)
 		rw.WriteHeader(http.StatusNotFound)
 		rw.Header().Add("Content-Type", "application/json")
 		data.ToJSON(&GenericError{Message: err.Error()}, rw)
 		return
 	default:
-		items.l.Println("[Error] Error Deleting Item with ID ", id)
+		items.l.Error("Error Deleting", "ID", id, "error", err)
 		rw.WriteHeader(http.StatusInternalServerError)
-		items.l.Println("[Error]", err)
 		return
 	}
-	items.l.Println("[Debug] Deleted Item with ID ", id)
+	items.l.Debug("Deleted Item", "ID", id)
 }

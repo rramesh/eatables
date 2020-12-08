@@ -1,8 +1,7 @@
 package server
 
 import (
-	"log"
-
+	"github.com/hashicorp/go-hclog"
 	"github.com/rramesh/eatables/data"
 	"github.com/rramesh/eatables/handlers"
 	protos "github.com/rramesh/eatables/protos/items"
@@ -12,18 +11,19 @@ import (
 
 // GRPCServer contains logger
 type GRPCServer struct {
-	l *log.Logger
+	l      hclog.Logger
+	itemDB *data.ItemDB
 }
 
 // NewGRPCServer creates a new GRPC server
-func NewGRPCServer(l *log.Logger) *GRPCServer {
-	return &GRPCServer{l}
+func NewGRPCServer(l hclog.Logger, idb *data.ItemDB) *GRPCServer {
+	return &GRPCServer{l, idb}
 }
 
 // Server returns a GRPC server instance
 func (g *GRPCServer) Server(v *data.Validation) *grpc.Server {
 	gs := grpc.NewServer()
-	its := handlers.NewItemsGRPC(g.l, v)
+	its := handlers.NewItemsGRPC(g.l, v, g.itemDB)
 	protos.RegisterItemsServer(gs, its)
 	reflection.Register(gs)
 	return gs

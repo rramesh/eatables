@@ -21,4 +21,5 @@ require (
 	google.golang.org/grpc v1.34.0
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/go-playground/assert.v1 v1.2.1 // indirect
+	github.com/hashicorp/go-hclog v0.15.0
 )

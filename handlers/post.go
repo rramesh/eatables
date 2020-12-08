@@ -17,6 +17,6 @@ import (
 func (items *Items) Create(rw http.ResponseWriter, r *http.Request) {
 	it := r.Context().Value(KeyItem{}).(data.Item)
 	rw.Header().Add("Content-Type", "application/json")
-	items.l.Printf("[DEBUG] Inserting item: %#v\n", it)
-	data.AddNewItem(it)
+	items.l.Debug("Inserting item", "item", it)
+	items.itemDB.AddNewItem(it)
 }

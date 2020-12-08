@@ -3,6 +3,8 @@ package data
 import (
 	"fmt"
 	"time"
+
+	"github.com/hashicorp/go-hclog"
 )
 
 // Item defines the structure for an API Food Item
@@ -88,18 +90,28 @@ type TimeRange struct {
 // Items is a collection of Item
 type Items []*Item
 
+// ItemDB is the interface to DB methods
+type ItemDB struct {
+	l hclog.Logger
+}
+
+// NewItemDB creates an instance of ItemDB
+func NewItemDB(l hclog.Logger) *ItemDB {
+	return &ItemDB{l}
+}
+
 // ErrItemNotFound is custom error message when Item not found in DB
 var ErrItemNotFound = fmt.Errorf("No Items Found")
 
 // GetItems returns static collection of Items
-func GetItems() Items {
+func (i *ItemDB) GetItems() Items {
 	return itemList
 }
 
 // GetItemByID returns a particular Item identified by ID
 // This can be used for internal calls where record ID of the item is known
 // Returns ErrItemNotFound when no item with given ID is found
-func GetItemByID(id int) (*Item, error) {
+func (i *ItemDB) GetItemByID(id int) (*Item, error) {
 	idx, item := findIndexAndItemByID(id)
 	if idx == -1 {
 		return nil, ErrItemNotFound
@@ -111,7 +123,7 @@ func GetItemByID(id int) (*Item, error) {
 // This can be used for other services or UI to call as
 // SKU of item alone is exposed and not record ID
 // Returns ErrItemNotFound when no item with given ID is found
-func GetItemBySKU(uuid string) (*Item, error) {
+func (i *ItemDB) GetItemBySKU(uuid string) (*Item, error) {
 	idx, item := findIndexAndItemBySKU(uuid)
 	if idx == -1 {
 		return nil, ErrItemNotFound
@@ -121,7 +133,7 @@ func GetItemBySKU(uuid string) (*Item, error) {
 
 // GetItemByVendorCode returns list of Items identified by Vendor UUID
 // Returns ErrItemNotFound when no item with given ID is found
-func GetItemByVendorCode(uuid string) ([]*Item, error) {
+func (i *ItemDB) GetItemByVendorCode(uuid string) ([]*Item, error) {
 	items := findItemsByVendorCode(uuid)
 	if len(items) == 0 {
 		return nil, ErrItemNotFound
@@ -130,7 +142,7 @@ func GetItemByVendorCode(uuid string) ([]*Item, error) {
 }
 
 // AddNewItem creates a new Item to the Item DB
-func AddNewItem(it Item) {
+func (i *ItemDB) AddNewItem(it Item) {
 	it.ID = getNextID()
 	it.CreatedAt = time.Now().UTC().String()
 	it.UpdatedAt = time.Now().UTC().String()
@@ -138,7 +150,7 @@ func AddNewItem(it Item) {
 }
 
 // UpdateItem updates an Item with the given ID
-func UpdateItem(it Item) error {
+func (i *ItemDB) UpdateItem(it Item) error {
 	idx, itWas := findIndexAndItemBySKU(it.SKU)
 
 	if idx == -1 {
@@ -154,7 +166,7 @@ func UpdateItem(it Item) error {
 }
 
 // DeleteItem removes an Item from the Item DB
-func DeleteItem(id int) error {
+func (i *ItemDB) DeleteItem(id int) error {
 	idx, _ := findIndexAndItemByID(id)
 	if idx == 0 {
 		return ErrItemNotFound

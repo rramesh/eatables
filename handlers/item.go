@@ -1,19 +1,20 @@
 package handlers
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/hashicorp/go-hclog"
 
 	"github.com/rramesh/eatables/data"
 )
 
 // Items is a http.Handler
 type Items struct {
-	l *log.Logger
-	v *data.Validation
+	l      hclog.Logger
+	v      *data.Validation
+	itemDB *data.ItemDB
 }
 
 // KeyItem is item request from body, to pass back to request context
@@ -21,8 +22,8 @@ type Items struct {
 type KeyItem struct{}
 
 // NewItems creates a items handler with the given logger
-func NewItems(l *log.Logger, v *data.Validation) *Items {
-	return &Items{l, v}
+func NewItems(l hclog.Logger, v *data.Validation, idb *data.ItemDB) *Items {
+	return &Items{l, v, idb}
 }
 
 // GenericError holds a message string to be sent as JSON

@@ -1,30 +1,31 @@
 package server
 
 import (
-	"log"
 	"net/http"
 	"time"
 
 	"github.com/go-openapi/runtime/middleware"
 	gohandlers "github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
+	"github.com/hashicorp/go-hclog"
 	"github.com/rramesh/eatables/data"
 	"github.com/rramesh/eatables/handlers"
 )
 
 // RESTServer contains logger
 type RESTServer struct {
-	l *log.Logger
+	l      hclog.Logger
+	itemDB *data.ItemDB
 }
 
 // NewRESTServer creates a new REST server
-func NewRESTServer(l *log.Logger) *RESTServer {
-	return &RESTServer{l}
+func NewRESTServer(l hclog.Logger, idb *data.ItemDB) *RESTServer {
+	return &RESTServer{l, idb}
 }
 
 // Server creates a REST Server instance
 func (r *RESTServer) Server(v *data.Validation) *http.Server {
-	ih := handlers.NewItems(r.l, v)
+	ih := handlers.NewItems(r.l, v, r.itemDB)
 
 	sm := mux.NewRouter()
 	getRouter := sm.Methods(http.MethodGet).Subrouter()
@@ -55,11 +56,11 @@ func (r *RESTServer) Server(v *data.Validation) *http.Server {
 	// create a new server
 	s := &http.Server{
 		// Addr:         *bindAddress,      //configure the bind address
-		Handler:      ch(sm),            // set the default handler
-		ErrorLog:     r.l,               // set the logger for the server
-		IdleTimeout:  120 * time.Second, // max time for connections using TCP Keep-Alive
-		ReadTimeout:  1 * time.Second,   // max time to read request from the client
-		WriteTimeout: 1 * time.Second,   // max time to write response to the client
+		Handler:      ch(sm),                                             // set the default handler
+		ErrorLog:     r.l.StandardLogger(&hclog.StandardLoggerOptions{}), // set the logger for the server
+		IdleTimeout:  120 * time.Second,                                  // max time for connections using TCP Keep-Alive
+		ReadTimeout:  1 * time.Second,                                    // max time to read request from the client
+		WriteTimeout: 1 * time.Second,                                    // max time to write response to the client
 	}
 	return s
 }

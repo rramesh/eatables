@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"net"
 	"net/http"
 	"os"
@@ -10,6 +9,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/hashicorp/go-hclog"
 	"github.com/nicholasjackson/env"
 	"github.com/rramesh/eatables/data"
 	"github.com/rramesh/eatables/server"
@@ -22,16 +22,20 @@ var bindAddress = env.String("BIND_ADDRESS", false, ":9090", "Bind address for t
 func main() {
 	env.Parse()
 
-	l := log.New(os.Stdout, "eatables>", log.LstdFlags)
+	l := hclog.New(&hclog.LoggerOptions{
+		Name:  "eatables",
+		Level: hclog.LevelFromString("DEBUG"),
+	})
 	v := data.NewValidation()
+	db := data.NewItemDB(l)
 
-	l.Println("Starting servier on port", *bindAddress)
-	l.Println("Number of CPU Cores:", runtime.NumCPU())
+	l.Debug("Starting servier on port", "address", *bindAddress)
+	l.Debug("Number of CPU Cores", "cores", runtime.NumCPU())
 
 	ln, err := net.Listen("tcp", *bindAddress)
 
 	if err != nil {
-		l.Fatal(err)
+		l.Error("Error Starting Server", "error", err)
 	}
 
 	m := cmux.New(ln)
@@ -41,8 +45,8 @@ func main() {
 	grpcL := m.MatchWithWriters(cmux.HTTP2MatchHeaderFieldSendSettings("content-type", "application/grpc"))
 	httpL := m.Match(cmux.HTTP1Fast())
 
-	grpcS := server.NewGRPCServer(l)
-	restS := server.NewRESTServer(l)
+	grpcS := server.NewGRPCServer(l, db)
+	restS := server.NewRESTServer(l, db)
 
 	g := grpcS.Server(v)
 	h := restS.Server(v)
@@ -50,13 +54,13 @@ func main() {
 	go func(gServer *grpc.Server) {
 		err := gServer.Serve(grpcL)
 		if err != nil {
-			l.Fatal(err)
+			l.Error("Error Starting Server", "error", err)
 		}
 	}(g)
 	go func(hServer *http.Server) {
 		err = hServer.Serve(httpL)
 		if err != nil {
-			l.Fatal(err)
+			l.Error("Error Starting Server", "error", err)
 		}
 	}(h)
 
@@ -69,7 +73,7 @@ func main() {
 
 	// Block until a signal is received.
 	sig := <-sigChan
-	l.Println("Recieved terminate, shutting down gracefully", sig)
+	l.Debug("Recieved terminate, shutting down gracefully", "Signal", sig)
 
 	// gracefully shutdown the server, waiting max 30 seconds for current operations to complete
 	tc, _ := context.WithTimeout(context.Background(), 30*time.Second)
