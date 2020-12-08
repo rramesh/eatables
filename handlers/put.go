@@ -16,7 +16,7 @@ import (
 //  422: errorValidation
 func (items *Items) Update(rw http.ResponseWriter, r *http.Request) {
 	it := r.Context().Value(KeyItem{}).(data.Item)
-	items.l.Println("[Debug] Updating Item with ID ", it.ID)
+	items.l.Println("[Debug] Updating Item with SKU ", it.SKU)
 
 	err := data.UpdateItem(it)
 	if err == data.ErrItemNotFound {
@@ -33,5 +33,5 @@ func (items *Items) Update(rw http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items.l.Printf("[Debug] Updated Item: %#v", it)
+	items.l.Println("[Debug] Item with SKU", it.SKU, " updated successfully")
 }

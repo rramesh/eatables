@@ -39,7 +39,7 @@ type Item struct {
 	// required: true
 	// min: 0.01
 	// example: 75.00
-	Price float32 `json:"price" validate:"gt=0.0"`
+	Price float64 `json:"price" validate:"gt=0.0"`
 
 	// Whether this Item is Non-vegetarian
 	// Defaults to False if not provided - Item is Vegetarian by default
@@ -62,8 +62,8 @@ type Item struct {
 
 	// What times this item is available.
 	// Range provided as Array of Array of two strings
-	// example: [["7:00", "11:30"], ["17:00", "22:30"]]
-	AvailableTimes []([2]string) `json:"availableTimes"`
+	// example: [{from: "7:00", to: "11:30"}, {from: "17:00", to: "22:30"}]
+	AvailableTimes []TimeRange `json:"availableTimes"`
 
 	// Tags to be associated with this Item.
 	// Helpful as search keywords
@@ -77,6 +77,12 @@ type Item struct {
 
 	CreatedAt string `json:"-"`
 	UpdatedAt string `json:"-"`
+}
+
+// TimeRange holds a starting and ending time
+type TimeRange struct {
+	From string `json:"from"`
+	To   string `json:"to"`
 }
 
 // Items is a collection of Item
@@ -115,8 +121,8 @@ func GetItemBySKU(uuid string) (*Item, error) {
 
 // GetItemByVendorCode returns list of Items identified by Vendor UUID
 // Returns ErrItemNotFound when no item with given ID is found
-func GetItemByVendorCode(uuid string) ([]Item, error) {
-	items := findIndexAndItemByVendorCode(uuid)
+func GetItemByVendorCode(uuid string) ([]*Item, error) {
+	items := findItemsByVendorCode(uuid)
 	if len(items) == 0 {
 		return nil, ErrItemNotFound
 	}
@@ -133,12 +139,14 @@ func AddNewItem(it Item) {
 
 // UpdateItem updates an Item with the given ID
 func UpdateItem(it Item) error {
-	idx, itWas := findIndexAndItemByID(it.ID)
+	idx, itWas := findIndexAndItemBySKU(it.SKU)
 
 	if idx == -1 {
 		return ErrItemNotFound
 	}
-
+	// Do not allow change of ID and SKU
+	it.ID = itWas.ID
+	it.SKU = itWas.SKU
 	it.CreatedAt = itWas.CreatedAt
 	it.UpdatedAt = time.Now().UTC().String()
 	itemList[idx] = &it
@@ -148,10 +156,10 @@ func UpdateItem(it Item) error {
 // DeleteItem removes an Item from the Item DB
 func DeleteItem(id int) error {
 	idx, _ := findIndexAndItemByID(id)
-	if idx == -1 {
+	if idx == 0 {
 		return ErrItemNotFound
 	}
-	itemList = itemList[:idx+copy(itemList[idx:], itemList[idx+1:])]
+	itemList = itemList[:int(idx)+copy(itemList[idx:], itemList[idx+1:])]
 	return nil
 }
 
@@ -173,11 +181,11 @@ func findIndexAndItemBySKU(uuid string) (int, *Item) {
 	return -1, nil
 }
 
-func findIndexAndItemByVendorCode(uuid string) []Item {
-	var items = []Item{}
+func findItemsByVendorCode(uuid string) []*Item {
+	var items = []*Item{}
 	for _, item := range itemList {
 		if item.VendorCode == uuid {
-			items = append(items, *item)
+			items = append(items, item)
 		}
 	}
 	return items
@@ -203,7 +211,7 @@ var itemList = []*Item{
 		Cuisine:        "South Indian",
 		Category:       []string{"Breakfast", "Dinner"},
 		Customizable:   false,
-		AvailableTimes: [][2]string{{"6:00", "11:00"}, {"17:00", "22:30"}},
+		AvailableTimes: []TimeRange{{From: "6:00", To: "11:00"}, {From: "17:00", To: "22:30"}},
 		Tags:           []string{"Dosa", "Masal Dosa", "South Indian", "Dosai", "Masala Dosai", "Masala"},
 		CreatedAt:      time.Now().UTC().String(),
 		UpdatedAt:      time.Now().UTC().String(),
