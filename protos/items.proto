@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+service Items {
+    rpc ListAll(ListAllRequest) returns (ItemsListResponse);
+    rpc ListByID(IDRequest) returns (ItemsListResponse);
+    rpc ListBySKU(UUIDRequest) returns (ItemsListResponse);
+    rpc ListByVendorCode(UUIDRequest) returns (ItemsListResponse);
+    rpc Add(CreateOrUpdateRequest) returns  (GenericResponse);
+    rpc Update(CreateOrUpdateRequest) returns (GenericResponse);
+    rpc Delete(IDRequest) returns (GenericResponse);
+}
+
+message ListAllRequest{}
+
+message ItemsListResponse{
+    repeated ItemDetails items = 1;
+}
+
+message IDRequest {
+    int32 id = 1;
+}
+
+message UUIDRequest {
+    string uuid = 2;
+}
+
+message ItemDetails {
+    int32 id = 1;
+    string sku = 2;
+    string vendorCode = 3;
+    string name = 4;
+    string description = 5;
+    float price = 6;
+    bool nonVegetarian = 7;
+    string cuisine = 8;
+    repeated string category = 9;
+    bool customizable = 10;
+    repeated TimeRange availableTimes = 11;
+    repeated string tags = 12;
+    bool dontMakeItAnymore = 13;
+}
+
+message TimeRange{
+    string from = 1;
+    string to = 2;
+}
+
+message CreateOrUpdateRequest {
+    string sku = 1;
+    string vendorCode = 2;
+    string name = 3;
+    string description = 4;
+    double price = 5;
+    bool nonVegetarian = 6;
+    string cuisine = 7;
+    repeated string category = 8;
+    bool customizable = 9;
+    repeated TimeRange availableTimes = 10;
+    repeated string tags = 11;
+}
+
+message GenericResponse {
+    string message = 1;
+}
