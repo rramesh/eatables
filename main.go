@@ -37,7 +37,7 @@ func main() {
 	if err != nil {
 		l.Error("Error Starting Server", "error", err)
 	}
-
+	defer ln.Close()
 	m := cmux.New(ln)
 
 	// Match connections in order:
@@ -64,7 +64,7 @@ func main() {
 		}
 	}(h)
 
-	m.Serve()
+	go m.Serve()
 
 	// trap sigterm or interupt and gracefully shutdown the server
 	sigChan := make(chan os.Signal)
@@ -76,7 +76,9 @@ func main() {
 	l.Debug("Recieved terminate, shutting down gracefully", "Signal", sig)
 
 	// gracefully shutdown the server, waiting max 30 seconds for current operations to complete
-	tc, _ := context.WithTimeout(context.Background(), 30*time.Second)
-	g.Stop()
+	tc, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	g.GracefulStop()
 	h.Shutdown(tc)
 }

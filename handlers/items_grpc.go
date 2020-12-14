@@ -1,13 +1,14 @@
 package handlers
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/hashicorp/go-hclog"
 	"github.com/rramesh/eatables/data"
 	protos "github.com/rramesh/eatables/protos/items"
 	"golang.org/x/net/context"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 //ItemsGRPC holds logger
@@ -34,8 +35,17 @@ func (it *ItemsGRPC) ListByID(ctx context.Context, req *protos.IDRequest) (*prot
 	it.l.Debug("Fetch Item (GRPC)", "ID", req.Id)
 	item, err := it.itemDB.GetItemByID(int(req.Id))
 	if err == data.ErrItemNotFound {
+		errg := status.Newf(
+			codes.NotFound,
+			"Item with ID %d not found",
+			req.Id,
+		)
+		errg, cpe := errg.WithDetails(req)
+		if cpe != nil {
+			return nil, cpe
+		}
 		it.l.Info("Item not found", "ID", req.Id)
-		return nil, err
+		return nil, errg.Err()
 	}
 	return &protos.ItemsListResponse{Items: data.FromItems(data.Items{item})}, nil
 }
@@ -45,8 +55,17 @@ func (it *ItemsGRPC) ListBySKU(ctx context.Context, req *protos.UUIDRequest) (*p
 	it.l.Debug("Fetch Item (GRPC)", "SKU", req.Uuid)
 	item, err := it.itemDB.GetItemBySKU(req.Uuid)
 	if err == data.ErrItemNotFound {
+		errg := status.Newf(
+			codes.NotFound,
+			"Item with SKU %s not found",
+			req.Uuid,
+		)
+		errg, cpe := errg.WithDetails(req)
+		if cpe != nil {
+			return nil, cpe
+		}
 		it.l.Info("Item not found ", "SKU", req.Uuid)
-		return nil, err
+		return nil, errg.Err()
 	}
 	return &protos.ItemsListResponse{Items: data.FromItems(data.Items{item})}, nil
 }
@@ -56,8 +75,17 @@ func (it *ItemsGRPC) ListByVendorCode(ctx context.Context, req *protos.UUIDReque
 	it.l.Debug("Fetch Item (GRPC)", "Vendor Code", req.Uuid)
 	items, err := it.itemDB.GetItemByVendorCode(req.Uuid)
 	if err == data.ErrItemNotFound {
+		errg := status.Newf(
+			codes.NotFound,
+			"Item with Vendor Code %s not found",
+			req.Uuid,
+		)
+		errg, cpe := errg.WithDetails(req)
+		if cpe != nil {
+			return nil, cpe
+		}
 		it.l.Info("Item not found", "Vendor Code", req.Uuid)
-		return nil, err
+		return nil, errg.Err()
 	}
 	return &protos.ItemsListResponse{Items: data.FromItems(items)}, nil
 }
@@ -69,8 +97,16 @@ func (it *ItemsGRPC) Add(ctx context.Context, req *protos.CreateOrUpdateRequest)
 	resp := &protos.GenericResponse{}
 	errs := it.v.Validate(item)
 	if len(errs) != 0 {
+		errg := status.Newf(
+			codes.FailedPrecondition,
+			"Validation Error",
+		)
+		errg, cpe := errg.WithDetails(req)
+		if cpe != nil {
+			return nil, cpe
+		}
 		resp.Message = strings.Join(errs.Errors(), ", ")
-		return resp, fmt.Errorf("Validationn Error")
+		return resp, errg.Err()
 	}
 	it.itemDB.AddNewItem(*item)
 	resp.Message = "Item Successfully Added"
@@ -83,12 +119,29 @@ func (it *ItemsGRPC) Update(ctx context.Context, req *protos.CreateOrUpdateReque
 	it.l.Debug("Updating Item (GRPC)", "SKU", item.SKU)
 	err := it.itemDB.UpdateItem(*item)
 	if err == data.ErrItemNotFound {
+		errg := status.Newf(
+			codes.NotFound,
+			"Item with SKU %s not found for Updating",
+			item.SKU,
+		)
+		errg, cpe := errg.WithDetails(req)
+		if cpe != nil {
+			return nil, cpe
+		}
 		it.l.Info("Item not found", "SKU", item.SKU)
-		return nil, fmt.Errorf("Item with given SKU not found for Update")
+		return nil, errg.Err()
 	}
 	if err != nil {
+		errg := status.Newf(
+			codes.Internal,
+			"Internal error updating Item",
+		)
+		errg, cpe := errg.WithDetails(req)
+		if cpe != nil {
+			return nil, cpe
+		}
 		it.l.Error("Error Updating Item", "error", err)
-		return nil, fmt.Errorf("Error Updating Item")
+		return nil, errg.Err()
 	}
 	return &protos.GenericResponse{Message: "Item Updated Successfully"}, nil
 }
@@ -101,11 +154,28 @@ func (it *ItemsGRPC) Delete(ctx context.Context, req *protos.IDRequest) (*protos
 	switch err {
 	case nil:
 	case data.ErrItemNotFound:
+		errg := status.Newf(
+			codes.NotFound,
+			"Item with ID %d not found for Deletion",
+			id,
+		)
+		errg, cpe := errg.WithDetails(req)
+		if cpe != nil {
+			return nil, cpe
+		}
 		it.l.Error("Could not find item", "ID", id)
-		return nil, fmt.Errorf("Item with given ID not found for Delete")
+		return nil, errg.Err()
 	default:
+		errg := status.Newf(
+			codes.Internal,
+			"Internal error deleting Item",
+		)
+		errg, cpe := errg.WithDetails(req)
+		if cpe != nil {
+			return nil, cpe
+		}
 		it.l.Error("Error Deleting Item", "ID", id)
-		return nil, fmt.Errorf("Error Deleting Item")
+		return nil, errg.Err()
 	}
 	it.l.Debug("Deleted Item", "ID", id)
 	return &protos.GenericResponse{Message: "Item Deleted Successfully"}, nil
