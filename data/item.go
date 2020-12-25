@@ -4,49 +4,52 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/go-pg/pg/v10"
 	"github.com/hashicorp/go-hclog"
 )
 
 // Item defines the structure for an API Food Item
 // swagger:model
 type Item struct {
+	tableName struct{} `pg:"items,alias:item"`
+
 	// The ID of this Item
 	// required: false
 	// min: 1
-	ID int `json:"id"`
+	ID int `pg:",pk" json:"id"`
 
 	// The SKU of this Item. UUID format
 	// required: true
-	// pattern: [a-zA-Z0-9]{12}
-	// example: AB89C89F3897XMC7
-	SKU string `json:"sku" validate:"required,uuid"`
+	// pattern: [a-zA-Z0-9]{36}
+	// example: b5113148-d1fc-4c17-8177-519120495b4c
+	SKU string `pg:",type:uuid,notnull,unique" json:"sku"`
 
 	// The Vendor Code of this Item. UUID format
 	// required: true
-	// pattern: [a-zA-Z0-9]{12}
-	// example: 3X89238FASP287YR
-	VendorCode string `json:"vendorCode" validate:"required,uuid"`
+	// pattern: [a-zA-Z0-9]{36}
+	// example: ee846edd-b2ee-4ab2-bd97-2c4246c56cf5
+	VendorCode string `pg:",type:uuid,notnull" json:"vendorCode"`
 
 	// Name of this Item
 	// required: true
 	// example: Masala Dosa
-	Name string `json:"name" validate:"required"`
+	Name string `pg:",notnull" json:"name" validate:"required"`
 
 	// Description of this Item
 	// required: true
 	// example: Made from rice, lentils, potato, fenugreek, and curry leaves, and served with chutneys and sambar.
-	Description string `json:"description" validate:"required"`
+	Description string `pg:",notnull" json:"description" validate:"required"`
 
 	// Price of this Item
 	// required: true
 	// min: 0.01
 	// example: 75.00
-	Price float64 `json:"price" validate:"gt=0.0"`
+	Price float64 `pg:",notnull" json:"price" validate:"gt=0.0"`
 
 	// Whether this Item is Non-vegetarian
 	// Defaults to False if not provided - Item is Vegetarian by default
 	// example: false
-	NonVegetarian bool `json:"nonVegetarian"`
+	NonVegetarian bool `pg:",notnull,default:false" json:"nonVegetarian"`
 
 	// Cuisine this Item belongs to
 	// example: South Indian
@@ -56,29 +59,29 @@ type Item struct {
 	// Category this Item belongs to, array of Strings. Used for grouping Items under menu
 	// example: ["Breakfast", "Dinner"]
 	//          ["Snacks", "Anytime"]
-	Category []string `json:"category"`
+	Category []string `pg:",array" json:"category"`
 
 	// Is the Item Customizable. Defaults to False
 	// example: false
-	Customizable bool `json:"customizable"`
+	Customizable bool `pg:",default:false" json:"customizable"`
 
 	// What times this item is available.
 	// Range provided as Array of Array of two strings
 	// example: [{from: "7:00", to: "11:30"}, {from: "17:00", to: "22:30"}]
-	AvailableTimes []TimeRange `json:"availableTimes"`
+	AvailableTimes []TimeRange `pg:"type:jsonb" json:"availableTimes"`
 
 	// Tags to be associated with this Item.
 	// Helpful as search keywords
 	// example: ["Yummy", "South Indian", "Dosa", "Special Dosa"]
-	Tags []string `json:"tags"`
+	Tags []string `pg:",array" json:"tags"`
 
 	// Is the Item still made? Active?
 	// Defaults to False, meaning Item is still being made and active
 	// example: false
-	DontMakeItAnymore bool `json:"dontMakeItAnymore"`
+	DontMakeItAnymore bool `pg:",default:false" json:"dontMakeItAnymore"`
 
-	CreatedAt string `json:"-"`
-	UpdatedAt string `json:"-"`
+	CreatedAt time.Time `pg:",default:now()" json:"-"`
+	UpdatedAt time.Time `json:"-"`
 }
 
 // TimeRange holds a starting and ending time
@@ -92,12 +95,13 @@ type Items []*Item
 
 // ItemDB is the interface to DB methods
 type ItemDB struct {
-	l hclog.Logger
+	l  hclog.Logger
+	db *pg.DB
 }
 
 // NewItemDB creates an instance of ItemDB
-func NewItemDB(l hclog.Logger) *ItemDB {
-	return &ItemDB{l}
+func NewItemDB(l hclog.Logger, db *pg.DB) *ItemDB {
+	return &ItemDB{l, db}
 }
 
 // ErrItemNotFound is custom error message when Item not found in DB
@@ -105,7 +109,10 @@ var ErrItemNotFound = fmt.Errorf("No Items Found")
 
 // GetItems returns static collection of Items
 func (i *ItemDB) GetItems() Items {
-	return itemList
+	var items []*Item
+	i.db.Model(&items).Select()
+	return items
+	// return itemList
 }
 
 // GetItemByID returns a particular Item identified by ID
@@ -143,10 +150,15 @@ func (i *ItemDB) GetItemByVendorCode(uuid string) ([]*Item, error) {
 
 // AddNewItem creates a new Item to the Item DB
 func (i *ItemDB) AddNewItem(it Item) {
-	it.ID = getNextID()
-	it.CreatedAt = time.Now().UTC().String()
-	it.UpdatedAt = time.Now().UTC().String()
-	itemList = append(itemList, &it)
+	_, err := i.db.Model(&it).Insert()
+	if err != nil {
+		i.l.Error("Error inserting item into DB", "error", err)
+		return
+	}
+	// it.ID = getNextID()
+	// it.CreatedAt = time.Now().UTC().String()
+	// it.UpdatedAt = time.Now().UTC().String()
+	// itemList = append(itemList, &it)
 }
 
 // UpdateItem updates an Item with the given ID
@@ -160,7 +172,7 @@ func (i *ItemDB) UpdateItem(it Item) error {
 	it.ID = itWas.ID
 	it.SKU = itWas.SKU
 	it.CreatedAt = itWas.CreatedAt
-	it.UpdatedAt = time.Now().UTC().String()
+	it.UpdatedAt = time.Now()
 	itemList[idx] = &it
 	return nil
 }
@@ -225,7 +237,7 @@ var itemList = []*Item{
 		Customizable:   false,
 		AvailableTimes: []TimeRange{{From: "6:00", To: "11:00"}, {From: "17:00", To: "22:30"}},
 		Tags:           []string{"Dosa", "Masal Dosa", "South Indian", "Dosai", "Masala Dosai", "Masala"},
-		CreatedAt:      time.Now().UTC().String(),
-		UpdatedAt:      time.Now().UTC().String(),
+		CreatedAt:      time.Now(),
+		UpdatedAt:      time.Now(),
 	},
 }

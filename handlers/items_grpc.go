@@ -3,6 +3,7 @@ package handlers
 import (
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/hashicorp/go-hclog"
 	"github.com/rramesh/eatables/data"
 	protos "github.com/rramesh/eatables/protos/items"
@@ -94,6 +95,7 @@ func (it *ItemsGRPC) ListByVendorCode(ctx context.Context, req *protos.UUIDReque
 func (it *ItemsGRPC) Add(ctx context.Context, req *protos.CreateOrUpdateRequest) (*protos.GenericResponse, error) {
 	it.l.Debug("Add new item (GRPC)")
 	item := data.ToItem(req)
+	item.SKU = uuid.New().String()
 	resp := &protos.GenericResponse{}
 	errs := it.v.Validate(item)
 	if len(errs) != 0 {

@@ -49,7 +49,7 @@ func NewValidation() *Validation {
 //Validate UUID
 func validateUUID(fl validator.FieldLevel) bool {
 	//UUID must be 12 length alphanumeric
-	re := regexp.MustCompile(`[a-zA-Z0-9]{12}`)
+	re := regexp.MustCompile(`[a-zA-Z0-9]{36}`)
 	matches := re.FindAllString(fl.Field().String(), -1)
 	if len(matches) != 1 {
 		return false
