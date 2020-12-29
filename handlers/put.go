@@ -11,7 +11,7 @@ import (
 // swagger:route PUT /items items updateItem
 // Update an eatable item's details
 // responses:
-//	201: noContentResponse
+//	200: messageResponse
 //  404: errorResponse
 //  422: errorValidation
 func (items *Items) Update(rw http.ResponseWriter, r *http.Request) {
@@ -22,15 +22,16 @@ func (items *Items) Update(rw http.ResponseWriter, r *http.Request) {
 	if err == data.ErrItemNotFound {
 		rw.Header().Add("Content-Type", "application/json")
 		rw.WriteHeader(http.StatusNotFound)
-		data.ToJSON(&GenericError{Message: err.Error()}, rw)
+		data.ToJSON(&GenericMessage{Message: err.Error()}, rw)
 		return
 	}
-
 	if err != nil {
 		rw.WriteHeader(http.StatusInternalServerError)
 		items.l.Error("Error Updating Item", "error", err)
 		return
 	}
-
+	rw.WriteHeader(http.StatusOK)
+	rw.Header().Add("Content-Type", "application/json")
+	data.ToJSON(&GenericMessage{Message: "Item Updated Successfully"}, rw)
 	items.l.Debug("Item updated successfully", "SKU", it.SKU)
 }

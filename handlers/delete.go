@@ -11,7 +11,7 @@ import (
 // swagger:route DELETE /items/{id} items deleteItem
 // Deleta an eatable Item
 // responses:
-//	201: noContentResponse
+//	200: messageResponse
 //  404: errorResponse
 //  501: errorResponse
 func (items *Items) Delete(rw http.ResponseWriter, r *http.Request) {
@@ -24,12 +24,15 @@ func (items *Items) Delete(rw http.ResponseWriter, r *http.Request) {
 		items.l.Error("Item not found", "ID", id)
 		rw.WriteHeader(http.StatusNotFound)
 		rw.Header().Add("Content-Type", "application/json")
-		data.ToJSON(&GenericError{Message: err.Error()}, rw)
+		data.ToJSON(&GenericMessage{Message: err.Error()}, rw)
 		return
 	default:
 		items.l.Error("Error Deleting", "ID", id, "error", err)
 		rw.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	rw.WriteHeader(http.StatusOK)
+	rw.Header().Add("Content-Type", "application/json")
+	data.ToJSON(&GenericMessage{Message: "Item Deleted Successfully"}, rw)
 	items.l.Debug("Deleted Item", "ID", id)
 }

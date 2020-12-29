@@ -15,7 +15,7 @@ func (items Items) MiddlewareValidateItem(next http.Handler) http.Handler {
 		if err != nil {
 			items.l.Debug("Deserializing JSON", "error", err)
 			rw.WriteHeader(http.StatusBadRequest)
-			data.ToJSON(&GenericError{Message: err.Error()}, rw)
+			data.ToJSON(&GenericMessage{Message: err.Error()}, rw)
 			return
 		}
 

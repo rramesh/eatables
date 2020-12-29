@@ -16,12 +16,11 @@ func (items *Items) ListAll(rw http.ResponseWriter, r *http.Request) {
 	items.l.Debug("Fetching Item List")
 	rw.Header().Add("Content-Type", "application/json")
 	itemList := items.itemDB.GetItems()
-
-	err := data.ToJSON(itemList, rw)
+	err := data.ToJSON(itemsResponse(itemList), rw)
 	if err != nil {
 		items.l.Error("Seralizing item list to JSON", "error", err)
 		rw.WriteHeader(http.StatusInternalServerError)
-		data.ToJSON(&GenericError{Message: err.Error()}, rw)
+		data.ToJSON(&GenericMessage{Message: err.Error()}, rw)
 	}
 }
 
@@ -42,20 +41,19 @@ func (items *Items) ListSingle(rw http.ResponseWriter, r *http.Request) {
 	case data.ErrItemNotFound:
 		items.l.Info("Could not find", "ID", id)
 		rw.WriteHeader(http.StatusNotFound)
-		data.ToJSON(&GenericError{Message: err.Error()}, rw)
+		data.ToJSON(&GenericMessage{Message: err.Error()}, rw)
 		return
 	default:
 		items.l.Error("Error Fetching Item", "ID", id, "error", err)
 		rw.WriteHeader(http.StatusInternalServerError)
-		data.ToJSON(&GenericError{Message: err.Error()}, rw)
+		data.ToJSON(&GenericMessage{Message: err.Error()}, rw)
 		return
 	}
-
-	err = data.ToJSON(item, rw)
+	err = data.ToJSON(singleItemResponse(item), rw)
 	if err != nil {
 		items.l.Error("Seralizing item to JSON", "error", err)
 		rw.WriteHeader(http.StatusInternalServerError)
-		data.ToJSON(&GenericError{Message: err.Error()}, rw)
+		data.ToJSON(&GenericMessage{Message: err.Error()}, rw)
 	}
 }
 
@@ -76,20 +74,20 @@ func (items *Items) ListItemBySKU(rw http.ResponseWriter, r *http.Request) {
 	case data.ErrItemNotFound:
 		items.l.Info("Item not found", "SKU", uuid)
 		rw.WriteHeader(http.StatusNotFound)
-		data.ToJSON(&GenericError{Message: err.Error()}, rw)
+		data.ToJSON(&GenericMessage{Message: err.Error()}, rw)
 		return
 	default:
 		items.l.Error("Error Fetching Item", "SKU", uuid, "error", err)
 		rw.WriteHeader(http.StatusInternalServerError)
-		data.ToJSON(&GenericError{Message: err.Error()}, rw)
+		data.ToJSON(&GenericMessage{Message: err.Error()}, rw)
 		return
 	}
 
-	err = data.ToJSON(item, rw)
+	err = data.ToJSON(singleItemResponse(item), rw)
 	if err != nil {
 		items.l.Error("Seralizing items to JSON", "error", err)
 		rw.WriteHeader(http.StatusInternalServerError)
-		data.ToJSON(&GenericError{Message: err.Error()}, rw)
+		data.ToJSON(&GenericMessage{Message: err.Error()}, rw)
 	}
 }
 
@@ -110,19 +108,29 @@ func (items *Items) ListItemsByVendor(rw http.ResponseWriter, r *http.Request) {
 	case data.ErrItemNotFound:
 		items.l.Info("Item not found", "Vendor Code", uuid)
 		rw.WriteHeader(http.StatusNotFound)
-		data.ToJSON(&GenericError{Message: err.Error()}, rw)
+		data.ToJSON(&GenericMessage{Message: err.Error()}, rw)
 		return
 	default:
 		items.l.Error("Error Fetching Items", "Vendor Code", uuid, "error", err)
 		rw.WriteHeader(http.StatusInternalServerError)
-		data.ToJSON(&GenericError{Message: err.Error()}, rw)
+		data.ToJSON(&GenericMessage{Message: err.Error()}, rw)
 		return
 	}
 
-	err = data.ToJSON(itemList, rw)
+	err = data.ToJSON(itemsResponse(itemList), rw)
 	if err != nil {
 		items.l.Error("Seralizing items to JSON", "error", err)
 		rw.WriteHeader(http.StatusInternalServerError)
-		data.ToJSON(&GenericError{Message: err.Error()}, rw)
+		data.ToJSON(&GenericMessage{Message: err.Error()}, rw)
 	}
+}
+
+func singleItemResponse(item *data.Item) map[string]data.Items {
+	var itemResp data.Items = make(data.Items, 1)
+	itemResp[0] = item
+	return map[string]data.Items{"items": itemResp}
+}
+
+func itemsResponse(items data.Items) map[string]data.Items {
+	return map[string]data.Items{"items": items}
 }

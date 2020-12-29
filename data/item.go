@@ -1,6 +1,7 @@
 package data
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -49,7 +50,7 @@ type Item struct {
 	// Whether this Item is Non-vegetarian
 	// Defaults to False if not provided - Item is Vegetarian by default
 	// example: false
-	NonVegetarian bool `pg:",notnull,default:false" json:"nonVegetarian"`
+	NonVegetarian bool `pg:",default:false" json:"nonVegetarian"`
 
 	// Cuisine this Item belongs to
 	// example: South Indian
@@ -66,9 +67,9 @@ type Item struct {
 	Customizable bool `pg:",default:false" json:"customizable"`
 
 	// What times this item is available.
-	// Range provided as Array of Array of two strings
-	// example: [{from: "7:00", to: "11:30"}, {from: "17:00", to: "22:30"}]
-	AvailableTimes []TimeRange `pg:"type:jsonb" json:"availableTimes"`
+	// Range provided as Array of map consisiting of from and to times as integers represented in minutes
+	// example: [{From: 360, To: 660}, {From: 1020, To: 1350}]
+	AvailableTimes []TimeRange `pg:"type:jsonb" json:"availableTimes" validate:"dive,required"`
 
 	// Tags to be associated with this Item.
 	// Helpful as search keywords
@@ -81,13 +82,13 @@ type Item struct {
 	DontMakeItAnymore bool `pg:",default:false" json:"dontMakeItAnymore"`
 
 	CreatedAt time.Time `pg:",default:now()" json:"-"`
-	UpdatedAt time.Time `json:"-"`
+	UpdatedAt time.Time `pg:",default:now()" json:"-"`
 }
 
 // TimeRange holds a starting and ending time
 type TimeRange struct {
-	From string `json:"from"`
-	To   string `json:"to"`
+	From uint32 `json:"from" validate:"required,gte=0,lte=1440"`
+	To   uint32 `json:"to" validate:"gtfield=From"`
 }
 
 // Items is a collection of Item
@@ -105,25 +106,22 @@ func NewItemDB(l hclog.Logger, db *pg.DB) *ItemDB {
 }
 
 // ErrItemNotFound is custom error message when Item not found in DB
-var ErrItemNotFound = fmt.Errorf("No Items Found")
+var ErrItemNotFound = fmt.Errorf("Could not find Item to process")
 
 // GetItems returns static collection of Items
 func (i *ItemDB) GetItems() Items {
-	var items []*Item
+	var items Items
 	i.db.Model(&items).Select()
 	return items
-	// return itemList
 }
 
 // GetItemByID returns a particular Item identified by ID
 // This can be used for internal calls where record ID of the item is known
 // Returns ErrItemNotFound when no item with given ID is found
 func (i *ItemDB) GetItemByID(id int) (*Item, error) {
-	idx, item := findIndexAndItemByID(id)
-	if idx == -1 {
-		return nil, ErrItemNotFound
-	}
-	return item, nil
+	item := new(Item)
+	err := i.db.Model(item).Where("id = ?", id).Select()
+	return item, err
 }
 
 // GetItemBySKU returns a particular Item identified by SKU
@@ -131,113 +129,79 @@ func (i *ItemDB) GetItemByID(id int) (*Item, error) {
 // SKU of item alone is exposed and not record ID
 // Returns ErrItemNotFound when no item with given ID is found
 func (i *ItemDB) GetItemBySKU(uuid string) (*Item, error) {
-	idx, item := findIndexAndItemBySKU(uuid)
-	if idx == -1 {
-		return nil, ErrItemNotFound
-	}
-	return item, nil
+	item := new(Item)
+	err := i.db.Model(item).Where("sku = ?", uuid).Select()
+	return item, err
 }
 
 // GetItemByVendorCode returns list of Items identified by Vendor UUID
 // Returns ErrItemNotFound when no item with given ID is found
-func (i *ItemDB) GetItemByVendorCode(uuid string) ([]*Item, error) {
-	items := findItemsByVendorCode(uuid)
-	if len(items) == 0 {
-		return nil, ErrItemNotFound
-	}
-	return items, nil
+func (i *ItemDB) GetItemByVendorCode(uuid string) (Items, error) {
+	var items Items
+	err := i.db.Model(&items).Where("vendor_code = ?", uuid).Select()
+	return items, err
 }
 
 // AddNewItem creates a new Item to the Item DB
-func (i *ItemDB) AddNewItem(it Item) {
-	_, err := i.db.Model(&it).Insert()
-	if err != nil {
+func (i *ItemDB) AddNewItem(it Item) error {
+	ctx := context.Background()
+	tx, err := i.db.Begin()
+	defer tx.Close()
+	if err = func(tx *pg.Tx, ctx context.Context) error {
+		_, err := i.db.Model(&it).Insert()
+		return err
+	}(tx, ctx); err != nil {
 		i.l.Error("Error inserting item into DB", "error", err)
-		return
+		_ = tx.Rollback()
+		return err
 	}
-	// it.ID = getNextID()
-	// it.CreatedAt = time.Now().UTC().String()
-	// it.UpdatedAt = time.Now().UTC().String()
-	// itemList = append(itemList, &it)
+	if err := tx.Commit(); err != nil {
+		panic(err)
+	}
+	return err
 }
 
 // UpdateItem updates an Item with the given ID
 func (i *ItemDB) UpdateItem(it Item) error {
-	idx, itWas := findIndexAndItemBySKU(it.SKU)
-
-	if idx == -1 {
-		return ErrItemNotFound
-	}
-	// Do not allow change of ID and SKU
-	it.ID = itWas.ID
-	it.SKU = itWas.SKU
-	it.CreatedAt = itWas.CreatedAt
 	it.UpdatedAt = time.Now()
-	itemList[idx] = &it
-	return nil
+	ctx := context.Background()
+	tx, err := i.db.Begin()
+	defer tx.Close()
+	if err = func(tx *pg.Tx, ctx context.Context) error {
+		res, err := i.db.Model(&it).Where("sku = ?", it.SKU).UpdateNotZero()
+		if res.RowsAffected() == 0 {
+			err = ErrItemNotFound
+		}
+		return err
+	}(tx, ctx); err != nil {
+		i.l.Error("Error updating Item to DB", "error", err)
+		_ = tx.Rollback()
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		panic(err)
+	}
+	return err
 }
 
-// DeleteItem removes an Item from the Item DB
+// DeleteItem removes an Item from the DB
 func (i *ItemDB) DeleteItem(id int) error {
-	idx, _ := findIndexAndItemByID(id)
-	if idx == 0 {
-		return ErrItemNotFound
-	}
-	itemList = itemList[:int(idx)+copy(itemList[idx:], itemList[idx+1:])]
-	return nil
-}
-
-func findIndexAndItemByID(id int) (int, *Item) {
-	for idx, item := range itemList {
-		if item.ID == id {
-			return idx, item
+	ctx := context.Background()
+	tx, err := i.db.Begin()
+	defer tx.Close()
+	if err = func(tx *pg.Tx, ctx context.Context) error {
+		res, err := i.db.Model(&Item{}).Where("id = ?", id).Delete()
+		if res.RowsAffected() == 0 {
+			err = ErrItemNotFound
 		}
+		return err
+	}(tx, ctx); err != nil {
+		i.l.Error("Error deleting Item from DB", "error", err)
+		_ = tx.Rollback()
+		return err
 	}
-	return -1, nil
-}
-
-func findIndexAndItemBySKU(uuid string) (int, *Item) {
-	for idx, item := range itemList {
-		if item.SKU == uuid {
-			return idx, item
-		}
+	if err := tx.Commit(); err != nil {
+		panic(err)
 	}
-	return -1, nil
-}
-
-func findItemsByVendorCode(uuid string) []*Item {
-	var items = []*Item{}
-	for _, item := range itemList {
-		if item.VendorCode == uuid {
-			items = append(items, item)
-		}
-	}
-	return items
-}
-
-// GetNextID picks up the last element in the Item list and adds 1 to the ID value
-func getNextID() int {
-	lp := itemList[len(itemList)-1]
-	return lp.ID + 1
-}
-
-// itemList is a hard coded list of items for this
-// example data source
-var itemList = []*Item{
-	{
-		ID:             1,
-		SKU:            "jj3d8dk3mk9x",
-		VendorCode:     "dd33gk988kdx",
-		Name:           "Masal Dosai",
-		Description:    "Rice batter toasted circular on tava filled with mashed potatoes",
-		Price:          43.75,
-		NonVegetarian:  false,
-		Cuisine:        "South Indian",
-		Category:       []string{"Breakfast", "Dinner"},
-		Customizable:   false,
-		AvailableTimes: []TimeRange{{From: "6:00", To: "11:00"}, {From: "17:00", To: "22:30"}},
-		Tags:           []string{"Dosa", "Masal Dosa", "South Indian", "Dosai", "Masala Dosai", "Masala"},
-		CreatedAt:      time.Now(),
-		UpdatedAt:      time.Now(),
-	},
+	return err
 }

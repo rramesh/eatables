@@ -26,8 +26,8 @@ func NewItems(l hclog.Logger, v *data.Validation, idb *data.ItemDB) *Items {
 	return &Items{l, v, idb}
 }
 
-// GenericError holds a message string to be sent as JSON
-type GenericError struct {
+// GenericMessage holds a message string to be sent as JSON
+type GenericMessage struct {
 	Message string
 }
 

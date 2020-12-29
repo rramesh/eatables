@@ -20,12 +20,20 @@ import "github.com/rramesh/eatables/data"
 // NOTE: Types defined here are purely for documentation purposes
 // these types are not used by any of the handers
 
+// Generic message returned as a string
+// swagger:response messageResponse
+type messageResponseWrapper struct {
+	// Description of the error
+	// in: body
+	Body GenericMessage
+}
+
 // Generic error message returned as a string
 // swagger:response errorResponse
 type errorResponseWrapper struct {
 	// Description of the error
 	// in: body
-	Body GenericError
+	Body GenericMessage
 }
 
 // Validation errors defined as an array of strings
@@ -41,7 +49,9 @@ type errorValidationWrapper struct {
 type itemResponseWrapper struct {
 	// All Products in the DB
 	// in: body
-	Body []data.Item
+	Body struct {
+		Items []data.Item `json:"items"`
+	}
 }
 
 // swagger:parameters deleteItem

@@ -41,8 +41,8 @@ message ItemDetails {
 }
 
 message TimeRange{
-    string from = 1;
-    string to = 2;
+    uint32 from = 1;
+    uint32 to = 2;
 }
 
 message CreateOrUpdateRequest {

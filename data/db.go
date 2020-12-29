@@ -62,8 +62,10 @@ func (dbh *DBHandle) createSchema() error {
 	}
 
 	for _, model := range models {
+
 		err := dbh.DB.Model(model).CreateTable(&orm.CreateTableOptions{
-			Temp: false,
+			Temp:        false,
+			IfNotExists: true,
 		})
 		if err != nil {
 			return err
