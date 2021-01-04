@@ -6,7 +6,7 @@ import (
 	"github.com/rramesh/eatables/data"
 )
 
-// Delete returns a specific item with ID passed in the URL
+// Delete deletes an item in the DB identified by ID
 //
 // swagger:route DELETE /items/{id} items deleteItem
 // Deleta an eatable Item

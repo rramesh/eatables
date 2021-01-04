@@ -3,7 +3,6 @@ package handlers
 import (
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/rramesh/eatables/data"
 )
 
@@ -17,16 +16,19 @@ import (
 //  501: errorResponse
 func (items *Items) Create(rw http.ResponseWriter, r *http.Request) {
 	it := r.Context().Value(KeyItem{}).(data.Item)
-	it.SKU = uuid.New().String()
 	items.l.Debug("Inserting item", "item", it)
 	err := items.itemDB.AddNewItem(it)
 	rw.Header().Add("Content-Type", "application/json")
 	if err != nil {
-		rw.WriteHeader(http.StatusUnprocessableEntity)
-		items.l.Error("Error Adding Item", "error", err)
-		data.ToJSON(&GenericMessage{Message: err.Error()}, rw)
+		items.validationErrorResponse(rw, err)
 		return
 	}
 	rw.WriteHeader(http.StatusOK)
 	data.ToJSON(&GenericMessage{Message: "Item Successfully Added"}, rw)
+}
+
+func (items *Items) validationErrorResponse(rw http.ResponseWriter, err error) {
+	rw.WriteHeader(http.StatusUnprocessableEntity)
+	items.l.Error("Error Adding Item", "error", err)
+	data.ToJSON(&GenericMessage{Message: err.Error()}, rw)
 }

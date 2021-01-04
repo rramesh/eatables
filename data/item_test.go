@@ -44,26 +44,42 @@ func TestInvalidPriceReturnsErr(t *testing.T) {
 	assert.Len(t, err, 1)
 }
 
-func TestInvalidSKUReturnsErr(t *testing.T) {
+func TestAvailabilityTimesToLessThanFromReturnsErr(t *testing.T) {
 	it := &Item{
-		SKU:         "abcd",
-		VendorCode:  "h28920AcT543",
-		Name:        "Burger",
-		Description: "Unhealthy Food Item",
-		Price:       2.5,
+		SKU:            "abcdefg2AD23",
+		VendorCode:     "h28920AcT543",
+		Name:           "Burger",
+		Description:    "Unhealthy Food Item",
+		Price:          10.55,
+		AvailableTimes: []TimeRange{{From: 300, To: 120}},
 	}
 	v := NewValidation()
 	err := v.Validate(it)
 	assert.Len(t, err, 1)
 }
 
-func TestInvalidVendorCodeeturnsErr(t *testing.T) {
+func TestAvailabilityTimesOutOfRange1ReturnsErr(t *testing.T) {
 	it := &Item{
-		SKU:         "abcdefg2AD23",
-		VendorCode:  "T543",
-		Name:        "Burger",
-		Description: "Unhealthy Food Item",
-		Price:       2.5,
+		SKU:            "abcdefg2AD23",
+		VendorCode:     "h28920AcT543",
+		Name:           "Burger",
+		Description:    "Unhealthy Food Item",
+		Price:          10.55,
+		AvailableTimes: []TimeRange{{From: 12300, To: 12400}},
+	}
+	v := NewValidation()
+	err := v.Validate(it)
+	assert.Len(t, err, 2)
+}
+
+func TestAvailabilityTimesOutOfRange2ReturnsErr(t *testing.T) {
+	it := &Item{
+		SKU:            "abcdefg2AD23",
+		VendorCode:     "h28920AcT543",
+		Name:           "Burger",
+		Description:    "Unhealthy Food Item",
+		Price:          10.55,
+		AvailableTimes: []TimeRange{{From: 300, To: 12400}},
 	}
 	v := NewValidation()
 	err := v.Validate(it)

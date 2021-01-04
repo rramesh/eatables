@@ -3,7 +3,7 @@ package server
 import (
 	"github.com/hashicorp/go-hclog"
 	"github.com/rramesh/eatables/data"
-	"github.com/rramesh/eatables/handlers"
+	handlers "github.com/rramesh/eatables/handlers/grpc"
 	protos "github.com/rramesh/eatables/protos/items"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"

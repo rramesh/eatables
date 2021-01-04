@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/hashicorp/go-hclog"
 	"github.com/rramesh/eatables/data"
-	"github.com/rramesh/eatables/handlers"
+	handlers "github.com/rramesh/eatables/handlers/rest"
 )
 
 // RESTServer contains logger
