@@ -10,8 +10,8 @@ import (
 	"github.com/rramesh/eatables/data"
 )
 
-// Items is a http.Handler
-type Items struct {
+// ItemHandler is a http.Handler
+type ItemHandler struct {
 	l      hclog.Logger
 	v      *data.Validation
 	itemDB *data.ItemDB
@@ -22,8 +22,8 @@ type Items struct {
 type KeyItem struct{}
 
 // NewItems creates a items handler with the given logger
-func NewItems(l hclog.Logger, v *data.Validation, idb *data.ItemDB) *Items {
-	return &Items{l, v, idb}
+func NewItems(l hclog.Logger, v *data.Validation, idb *data.ItemDB) *ItemHandler {
+	return &ItemHandler{l, v, idb}
 }
 
 // GenericMessage holds a message string to be sent as JSON

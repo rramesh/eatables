@@ -34,6 +34,19 @@ func (it *ItemsGRPC) ListByID(ctx context.Context, req *protos.IDRequest) (*prot
 		it.l.Info("Item not found", "ID", req.Id)
 		return nil, errg.Err()
 	}
+	if err != nil {
+		errg := status.Newf(
+			codes.Internal,
+			"An internal error occured, try again later",
+			req.Id,
+		)
+		errg, cpe := errg.WithDetails(req)
+		if cpe != nil {
+			return nil, cpe
+		}
+		it.l.Error("An internal error occured", "error", err)
+		return nil, errg.Err()
+	}
 	return &protos.ItemsListResponse{Items: data.FromItems(data.Items{item})}, nil
 }
 
@@ -54,6 +67,31 @@ func (it *ItemsGRPC) ListBySKU(ctx context.Context, req *protos.UUIDRequest) (*p
 		it.l.Info("Item not found ", "SKU", req.Uuid)
 		return nil, errg.Err()
 	}
+	if err == data.ErrInvalidUUID {
+		errg := status.Newf(
+			codes.InvalidArgument,
+			"Invalid SKU. Should be a valid UUID format or value",
+			req.Uuid,
+		)
+		errg, cpe := errg.WithDetails(req)
+		if cpe != nil {
+			return nil, cpe
+		}
+		return nil, errg.Err()
+	}
+	if err != nil {
+		errg := status.Newf(
+			codes.Internal,
+			"An internal error occured, try again later",
+			req.Uuid,
+		)
+		errg, cpe := errg.WithDetails(req)
+		if cpe != nil {
+			return nil, cpe
+		}
+		it.l.Error("An internal error occured", "error", err)
+		return nil, errg.Err()
+	}
 	return &protos.ItemsListResponse{Items: data.FromItems(data.Items{item})}, nil
 }
 
@@ -61,17 +99,29 @@ func (it *ItemsGRPC) ListBySKU(ctx context.Context, req *protos.UUIDRequest) (*p
 func (it *ItemsGRPC) ListByVendorCode(ctx context.Context, req *protos.UUIDRequest) (*protos.ItemsListResponse, error) {
 	it.l.Debug("Fetch Item (GRPC)", "Vendor Code", req.Uuid)
 	items, err := it.itemDB.GetItemByVendorCode(req.Uuid)
-	if err == data.ErrItemNotFound {
+	if err == data.ErrInvalidUUID {
 		errg := status.Newf(
-			codes.NotFound,
-			"Item with Vendor Code %s not found",
+			codes.InvalidArgument,
+			"Invalid Vendor Code. Should be a valid UUID format or value",
 			req.Uuid,
 		)
 		errg, cpe := errg.WithDetails(req)
 		if cpe != nil {
 			return nil, cpe
 		}
-		it.l.Info("Item not found", "Vendor Code", req.Uuid)
+		return nil, errg.Err()
+	}
+	if err != nil {
+		errg := status.Newf(
+			codes.Internal,
+			"An internal error occured, try again later",
+			req.Uuid,
+		)
+		errg, cpe := errg.WithDetails(req)
+		if cpe != nil {
+			return nil, cpe
+		}
+		it.l.Error("An internal error occured", "error", err)
 		return nil, errg.Err()
 	}
 	return &protos.ItemsListResponse{Items: data.FromItems(items)}, nil

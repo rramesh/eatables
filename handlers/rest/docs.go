@@ -47,7 +47,7 @@ type errorValidationWrapper struct {
 // A list of eatable items returned in the response
 // swagger:response itemResponse
 type itemResponseWrapper struct {
-	// All Products in the DB
+	// All items in the DB
 	// in: body
 	Body struct {
 		Items []data.Item `json:"items"`

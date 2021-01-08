@@ -12,7 +12,7 @@ import (
 // Returns a list of Eatable Items
 // responses:
 //	200: itemResponse
-func (items *Items) ListAll(rw http.ResponseWriter, r *http.Request) {
+func (items *ItemHandler) ListAll(rw http.ResponseWriter, r *http.Request) {
 	items.l.Debug("Fetching Item List")
 	rw.Header().Add("Content-Type", "application/json")
 	itemList := items.itemDB.GetItems()
@@ -31,7 +31,7 @@ func (items *Items) ListAll(rw http.ResponseWriter, r *http.Request) {
 // responses:
 //	200: itemResponse
 //	404: errorResponse
-func (items *Items) ListSingle(rw http.ResponseWriter, r *http.Request) {
+func (items *ItemHandler) ListSingle(rw http.ResponseWriter, r *http.Request) {
 	items.l.Debug("Fetching Item List")
 	id := getItemID(r)
 	rw.Header().Add("Content-Type", "application/json")
@@ -64,7 +64,7 @@ func (items *Items) ListSingle(rw http.ResponseWriter, r *http.Request) {
 // responses:
 //	200: itemResponse
 //	404: errorResponse
-func (items *Items) ListItemBySKU(rw http.ResponseWriter, r *http.Request) {
+func (items *ItemHandler) ListItemBySKU(rw http.ResponseWriter, r *http.Request) {
 	items.l.Debug("Fetching Item List by SKU")
 	uuid := getUUID(r)
 	rw.Header().Add("Content-Type", "application/json")
@@ -98,7 +98,7 @@ func (items *Items) ListItemBySKU(rw http.ResponseWriter, r *http.Request) {
 // responses:
 //	200: itemResponse
 //	404: errorResponse
-func (items *Items) ListItemsByVendor(rw http.ResponseWriter, r *http.Request) {
+func (items *ItemHandler) ListItemsByVendor(rw http.ResponseWriter, r *http.Request) {
 	items.l.Debug("Fetching Item List by Vendor Code")
 	uuid := getUUID(r)
 	rw.Header().Add("Content-Type", "application/json")

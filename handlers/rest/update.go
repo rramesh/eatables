@@ -14,7 +14,7 @@ import (
 //	200: messageResponse
 //  404: errorResponse
 //  422: errorValidation
-func (items *Items) Update(rw http.ResponseWriter, r *http.Request) {
+func (items *ItemHandler) Update(rw http.ResponseWriter, r *http.Request) {
 	it := r.Context().Value(KeyItem{}).(data.Item)
 	items.l.Debug("Updating Item", "SKU", it.SKU)
 

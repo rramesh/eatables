@@ -11,23 +11,23 @@ import (
 )
 
 // Delete deletes an item in the DB identified by ID by GRPC
-func (it *ItemsGRPC) Delete(ctx context.Context, req *protos.IDRequest) (*protos.GenericResponse, error) {
-	id := req.Id
-	it.l.Debug("Deleting Item (GRPC)", "ID", id)
-	err := it.itemDB.DeleteItem(int(id))
+func (it *ItemsGRPC) Delete(ctx context.Context, req *protos.UUIDRequest) (*protos.GenericResponse, error) {
+	sku := req.Uuid
+	it.l.Debug("Deleting Item (GRPC)", "ID", sku)
+	err := it.itemDB.DeleteItem(sku)
 	switch err {
 	case nil:
 	case data.ErrItemNotFound:
 		errg := status.Newf(
 			codes.NotFound,
-			"Item with ID %d not found for Deletion",
-			id,
+			"Item with SKU %s not found for Deletion",
+			sku,
 		)
 		errg, cpe := errg.WithDetails(req)
 		if cpe != nil {
 			return nil, cpe
 		}
-		it.l.Error("Could not find item", "ID", id)
+		it.l.Error("Could not find item", "SKU", sku)
 		return nil, errg.Err()
 	default:
 		errg := status.Newf(
@@ -38,9 +38,9 @@ func (it *ItemsGRPC) Delete(ctx context.Context, req *protos.IDRequest) (*protos
 		if cpe != nil {
 			return nil, cpe
 		}
-		it.l.Error("Error Deleting Item", "ID", id)
+		it.l.Error("Error Deleting Item", "SKU", sku)
 		return nil, errg.Err()
 	}
-	it.l.Debug("Deleted Item", "ID", id)
+	it.l.Debug("Deleted Item", "ID", sku)
 	return &protos.GenericResponse{Message: "Item Deleted Successfully"}, nil
 }

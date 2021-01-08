@@ -43,7 +43,7 @@ func (r *RESTServer) Server(v *data.Validation) *http.Server {
 	putRouter.Use(ih.MiddlewareValidateItem)
 
 	deleteRouter := sm.Methods(http.MethodDelete).Subrouter()
-	deleteRouter.HandleFunc("/items/{id:[0-9]+}", ih.Delete)
+	deleteRouter.HandleFunc("/items/{uuid}", ih.Delete)
 
 	// API Documentation
 	opts := middleware.RedocOpts{SpecURL: "/swagger.yaml"}

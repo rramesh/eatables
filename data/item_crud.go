@@ -27,6 +27,9 @@ var ErrItemNotFound = fmt.Errorf("Could not find Item to process")
 // ErrSKUInCreate is custom error message when Item not found in DB
 var ErrSKUInCreate = fmt.Errorf("SKU provided to add new Item. Provide data without SKU")
 
+// ErrInvalidUUID is custom error message when UUID passed is invalid
+var ErrInvalidUUID = fmt.Errorf("Invalid UUID format or value")
+
 // GetItems returns static collection of Items
 func (i *ItemDB) GetItems() Items {
 	var items Items
@@ -40,24 +43,48 @@ func (i *ItemDB) GetItems() Items {
 func (i *ItemDB) GetItemByID(id int) (*Item, error) {
 	item := new(Item)
 	err := i.db.Model(item).Where("id = ?", id).Select()
-	return item, err
+	if err != nil {
+		if err == pg.ErrNoRows {
+			return nil, ErrItemNotFound
+		}
+		i.l.Error("Error finding item by ID", "error", err)
+		return nil, err
+	}
+	return item, nil
 }
 
 // GetItemBySKU returns a particular Item identified by SKU
 // This can be used for other services or UI to call as
 // SKU of item alone is exposed and not record ID
 // Returns ErrItemNotFound when no item with given ID is found
-func (i *ItemDB) GetItemBySKU(uuid string) (*Item, error) {
+func (i *ItemDB) GetItemBySKU(sku string) (*Item, error) {
+	_, err := uuid.Parse(sku)
+	if err != nil {
+		i.l.Error("Error validating UUID", "error", err)
+		return nil, ErrInvalidUUID
+	}
 	item := new(Item)
-	err := i.db.Model(item).Where("sku = ?", uuid).Select()
-	return item, err
+	err = i.db.Model(item).Where("sku = ?", sku).Select()
+	if err != nil {
+		if err == pg.ErrNoRows {
+			return nil, ErrItemNotFound
+		}
+		i.l.Error("Error finding item by SKU", "error", err)
+		return nil, err
+	}
+	return item, nil
 }
 
 // GetItemByVendorCode returns list of Items identified by Vendor UUID
 // Returns ErrItemNotFound when no item with given ID is found
-func (i *ItemDB) GetItemByVendorCode(uuid string) (Items, error) {
+func (i *ItemDB) GetItemByVendorCode(vc string) (Items, error) {
+	_, err := uuid.Parse(vc)
+	if err != nil {
+		i.l.Error("Error validating UUID", "error", err)
+		return nil, ErrInvalidUUID
+	}
 	var items Items
-	err := i.db.Model(&items).Where("vendor_code = ?", uuid).Select()
+	err = i.db.Model(&items).Where("vendor_code = ?", vc).Select()
 	return items, err
 }
 
@@ -108,12 +135,12 @@ func (i *ItemDB) UpdateItem(it Item) error {
 }
 
 // DeleteItem removes an Item from the DB
-func (i *ItemDB) DeleteItem(id int) error {
+func (i *ItemDB) DeleteItem(sku string) error {
 	ctx := context.Background()
 	tx, err := i.db.Begin()
 	defer tx.Close()
 	if err = func(tx *pg.Tx, ctx context.Context) error {
-		res, err := i.db.Model(&Item{}).Where("id = ?", id).Delete()
+		res, err := i.db.Model(&Item{}).Where("sku = ?", sku).Delete()
 		if res.RowsAffected() == 0 {
 			err = ErrItemNotFound
 		}

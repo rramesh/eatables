@@ -7,7 +7,7 @@ service Items {
     rpc ListByVendorCode(UUIDRequest) returns (ItemsListResponse);
     rpc Add(CreateOrUpdateRequest) returns  (GenericResponse);
     rpc Update(CreateOrUpdateRequest) returns (GenericResponse);
-    rpc Delete(IDRequest) returns (GenericResponse);
+    rpc Delete(UUIDRequest) returns (GenericResponse);
 }
 
 message ListAllRequest{}

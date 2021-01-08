@@ -14,25 +14,25 @@ import (
 //	200: messageResponse
 //  404: errorResponse
 //  501: errorResponse
-func (items *Items) Delete(rw http.ResponseWriter, r *http.Request) {
-	id := getItemID(r)
-	items.l.Debug("Deleting Item", "ID", id)
-	err := items.itemDB.DeleteItem(id)
+func (items *ItemHandler) Delete(rw http.ResponseWriter, r *http.Request) {
+	sku := getUUID(r)
+	items.l.Debug("Deleting Item", "SKU", sku)
+	err := items.itemDB.DeleteItem(sku)
 	switch err {
 	case nil:
 	case data.ErrItemNotFound:
-		items.l.Error("Item not found", "ID", id)
+		items.l.Error("Item not found", "ID", sku)
 		rw.WriteHeader(http.StatusNotFound)
 		rw.Header().Add("Content-Type", "application/json")
 		data.ToJSON(&GenericMessage{Message: err.Error()}, rw)
 		return
 	default:
-		items.l.Error("Error Deleting", "ID", id, "error", err)
+		items.l.Error("Error Deleting", "ID", sku, "error", err)
 		rw.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	rw.WriteHeader(http.StatusOK)
 	rw.Header().Add("Content-Type", "application/json")
 	data.ToJSON(&GenericMessage{Message: "Item Deleted Successfully"}, rw)
-	items.l.Debug("Deleted Item", "ID", id)
+	items.l.Debug("Deleted Item", "ID", sku)
 }

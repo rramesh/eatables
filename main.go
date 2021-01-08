@@ -28,7 +28,7 @@ func main() {
 		l.Error("Error connecting to Database", "error", err)
 		os.Exit(1)
 	}
-	err = dbh.Init(false)
+	err = dbh.Init()
 	if err != nil {
 		l.Error("Error migrating DB", "error", err)
 		os.Exit(1)

@@ -14,7 +14,7 @@ import (
 //	200: messageResponse
 //  422: errorValidation
 //  501: errorResponse
-func (items *Items) Create(rw http.ResponseWriter, r *http.Request) {
+func (items *ItemHandler) Create(rw http.ResponseWriter, r *http.Request) {
 	it := r.Context().Value(KeyItem{}).(data.Item)
 	items.l.Debug("Inserting item", "item", it)
 	err := items.itemDB.AddNewItem(it)
@@ -27,7 +27,7 @@ func (items *Items) Create(rw http.ResponseWriter, r *http.Request) {
 	data.ToJSON(&GenericMessage{Message: "Item Successfully Added"}, rw)
 }
 
-func (items *Items) validationErrorResponse(rw http.ResponseWriter, err error) {
+func (items *ItemHandler) validationErrorResponse(rw http.ResponseWriter, err error) {
 	rw.WriteHeader(http.StatusUnprocessableEntity)
 	items.l.Error("Error Adding Item", "error", err)
 	data.ToJSON(&GenericMessage{Message: err.Error()}, rw)

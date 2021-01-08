@@ -8,20 +8,20 @@ import (
 )
 
 //MiddlewareValidateItem validates JSON from request body before passing back to router
-func (items Items) MiddlewareValidateItem(next http.Handler) http.Handler {
+func (ih ItemHandler) MiddlewareValidateItem(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		it := &data.Item{}
 		err := data.FromJSON(it, r.Body)
 		if err != nil {
-			items.l.Debug("Deserializing JSON", "error", err)
+			ih.l.Debug("Deserializing JSON", "error", err)
 			rw.WriteHeader(http.StatusBadRequest)
 			data.ToJSON(&GenericMessage{Message: err.Error()}, rw)
 			return
 		}
 
-		errs := items.v.Validate(it)
+		errs := ih.v.Validate(it)
 		if len(errs) != 0 {
-			items.l.Error("Item request validation failed", "error", errs)
+			ih.l.Error("Item request validation failed", "error", errs)
 			rw.WriteHeader(http.StatusUnprocessableEntity)
 			data.ToJSON(&ValidationError{Message: errs.Errors()}, rw)
 			return

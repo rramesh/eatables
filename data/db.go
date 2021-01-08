@@ -44,11 +44,11 @@ func (dbh *DBHandle) Connect(conf *config.Config) error {
 }
 
 // Init does a DB Migration if necessary
-func (dbh *DBHandle) Init(tempTable bool) error {
+func (dbh *DBHandle) Init() error {
 	if dbh.DB == nil {
 		return ErrMissingDBConnection
 	}
-	err := dbh.createSchema(tempTable)
+	err := dbh.createSchema()
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func (dbh *DBHandle) Init(tempTable bool) error {
 }
 
 // createSchema creates database schema for User and Story models.
-func (dbh *DBHandle) createSchema(tempTable bool) error {
+func (dbh *DBHandle) createSchema() error {
 	models := []interface{}{
 		(*Item)(nil),
 	}
@@ -64,7 +64,7 @@ func (dbh *DBHandle) createSchema(tempTable bool) error {
 	for _, model := range models {
 
 		err := dbh.DB.Model(model).CreateTable(&orm.CreateTableOptions{
-			Temp:        tempTable,
+			Temp:        false,
 			IfNotExists: true,
 		})
 		if err != nil {
