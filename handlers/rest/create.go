@@ -11,20 +11,20 @@ import (
 // swagger:route POST /items items createItem
 // Create a new Eatable item
 // responses:
-//	200: messageResponse
+//	200: createUpdateResponse
 //  422: errorValidation
 //  501: errorResponse
 func (items *ItemHandler) Create(rw http.ResponseWriter, r *http.Request) {
 	it := r.Context().Value(KeyItem{}).(data.Item)
 	items.l.Debug("Inserting item", "item", it)
-	err := items.itemDB.AddNewItem(it)
+	sku, err := items.itemDB.AddNewItem(it)
 	rw.Header().Add("Content-Type", "application/json")
 	if err != nil {
 		items.validationErrorResponse(rw, err)
 		return
 	}
 	rw.WriteHeader(http.StatusOK)
-	data.ToJSON(&GenericMessage{Message: "Item Successfully Added"}, rw)
+	data.ToJSON(&CreateUpdateMessage{Message: "Item Successfully Added", SKU: sku}, rw)
 }
 
 func (items *ItemHandler) validationErrorResponse(rw http.ResponseWriter, err error) {

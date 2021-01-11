@@ -51,27 +51,28 @@ func (it *ItemsGRPC) ListByID(ctx context.Context, req *protos.IDRequest) (*prot
 }
 
 // ListBySKU returns item identifyed by SKU
-func (it *ItemsGRPC) ListBySKU(ctx context.Context, req *protos.UUIDRequest) (*protos.ItemsListResponse, error) {
-	it.l.Debug("Fetch Item (GRPC)", "SKU", req.Uuid)
-	item, err := it.itemDB.GetItemBySKU(req.Uuid)
+func (it *ItemsGRPC) ListBySKU(ctx context.Context, req *protos.SKURequest) (*protos.ItemsListResponse, error) {
+	sku := req.Sku
+	it.l.Debug("Fetch Item (GRPC)", "SKU", sku)
+	item, err := it.itemDB.GetItemBySKU(sku)
 	if err == data.ErrItemNotFound {
 		errg := status.Newf(
 			codes.NotFound,
 			"Item with SKU %s not found",
-			req.Uuid,
+			sku,
 		)
 		errg, cpe := errg.WithDetails(req)
 		if cpe != nil {
 			return nil, cpe
 		}
-		it.l.Info("Item not found ", "SKU", req.Uuid)
+		it.l.Info("Item not found ", "SKU", sku)
 		return nil, errg.Err()
 	}
 	if err == data.ErrInvalidUUID {
 		errg := status.Newf(
 			codes.InvalidArgument,
 			"Invalid SKU. Should be a valid UUID format or value",
-			req.Uuid,
+			sku,
 		)
 		errg, cpe := errg.WithDetails(req)
 		if cpe != nil {
@@ -83,7 +84,7 @@ func (it *ItemsGRPC) ListBySKU(ctx context.Context, req *protos.UUIDRequest) (*p
 		errg := status.Newf(
 			codes.Internal,
 			"An internal error occured, try again later",
-			req.Uuid,
+			sku,
 		)
 		errg, cpe := errg.WithDetails(req)
 		if cpe != nil {
@@ -96,14 +97,15 @@ func (it *ItemsGRPC) ListBySKU(ctx context.Context, req *protos.UUIDRequest) (*p
 }
 
 // ListByVendorCode returns list of items by Vendor Code
-func (it *ItemsGRPC) ListByVendorCode(ctx context.Context, req *protos.UUIDRequest) (*protos.ItemsListResponse, error) {
-	it.l.Debug("Fetch Item (GRPC)", "Vendor Code", req.Uuid)
-	items, err := it.itemDB.GetItemByVendorCode(req.Uuid)
+func (it *ItemsGRPC) ListByVendorCode(ctx context.Context, req *protos.VendorCodeRequest) (*protos.ItemsListResponse, error) {
+	vc := req.VendorCode
+	it.l.Debug("Fetch Item (GRPC)", "Vendor Code", vc)
+	items, err := it.itemDB.GetItemByVendorCode(vc)
 	if err == data.ErrInvalidUUID {
 		errg := status.Newf(
 			codes.InvalidArgument,
 			"Invalid Vendor Code. Should be a valid UUID format or value",
-			req.Uuid,
+			vc,
 		)
 		errg, cpe := errg.WithDetails(req)
 		if cpe != nil {
@@ -115,7 +117,7 @@ func (it *ItemsGRPC) ListByVendorCode(ctx context.Context, req *protos.UUIDReque
 		errg := status.Newf(
 			codes.Internal,
 			"An internal error occured, try again later",
-			req.Uuid,
+			vc,
 		)
 		errg, cpe := errg.WithDetails(req)
 		if cpe != nil {

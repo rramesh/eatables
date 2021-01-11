@@ -3,11 +3,11 @@ syntax = "proto3";
 service Items {
     rpc ListAll(ListAllRequest) returns (ItemsListResponse);
     rpc ListByID(IDRequest) returns (ItemsListResponse);
-    rpc ListBySKU(UUIDRequest) returns (ItemsListResponse);
-    rpc ListByVendorCode(UUIDRequest) returns (ItemsListResponse);
-    rpc Add(CreateOrUpdateRequest) returns  (GenericResponse);
-    rpc Update(CreateOrUpdateRequest) returns (GenericResponse);
-    rpc Delete(UUIDRequest) returns (GenericResponse);
+    rpc ListBySKU(SKURequest) returns (ItemsListResponse);
+    rpc ListByVendorCode(VendorCodeRequest) returns (ItemsListResponse);
+    rpc Add(CreateOrUpdateRequest) returns  (CreateOrUpdateResponse);
+    rpc Update(CreateOrUpdateRequest) returns (CreateOrUpdateResponse);
+    rpc Delete(SKURequest) returns (GenericResponse);
 }
 
 message ListAllRequest{}
@@ -20,8 +20,12 @@ message IDRequest {
     int32 id = 1;
 }
 
-message UUIDRequest {
-    string uuid = 2;
+message SKURequest {
+    string sku = 1;
+}
+
+message VendorCodeRequest {
+    string vendorCode = 1;
 }
 
 message ItemDetails {
@@ -57,6 +61,11 @@ message CreateOrUpdateRequest {
     bool customizable = 9;
     repeated TimeRange availableTimes = 10;
     repeated string tags = 11;
+}
+
+message CreateOrUpdateResponse {
+    string message = 1;
+    string sku = 2;
 }
 
 message GenericResponse {

@@ -59,14 +59,14 @@ func (items *ItemHandler) ListSingle(rw http.ResponseWriter, r *http.Request) {
 
 // ListItemBySKU returns an item by SKU (UUID)
 //
-// swagger:route GET /items/sku/{uuid} items listItemBySKU
+// swagger:route GET /items/sku/{sku} items listItemBySKU
 // Returns an item by SKU (UUID)
 // responses:
 //	200: itemResponse
 //	404: errorResponse
 func (items *ItemHandler) ListItemBySKU(rw http.ResponseWriter, r *http.Request) {
 	items.l.Debug("Fetching Item List by SKU")
-	uuid := getUUID(r)
+	uuid := getSKUFromRequest(r)
 	rw.Header().Add("Content-Type", "application/json")
 	item, err := items.itemDB.GetItemBySKU(uuid)
 	switch err {
@@ -93,14 +93,14 @@ func (items *ItemHandler) ListItemBySKU(rw http.ResponseWriter, r *http.Request)
 
 // ListItemsByVendor returns a list of items by Vendor Code (UUID)
 //
-// swagger:route GET /items/vendor/{uuid} items listItemsByVendor
+// swagger:route GET /items/vendor/{vendorCode} items listItemsByVendor
 // Returns a list of items by Vendor Code (UUID)
 // responses:
 //	200: itemResponse
 //	404: errorResponse
 func (items *ItemHandler) ListItemsByVendor(rw http.ResponseWriter, r *http.Request) {
 	items.l.Debug("Fetching Item List by Vendor Code")
-	uuid := getUUID(r)
+	uuid := getVCFromRequest(r)
 	rw.Header().Add("Content-Type", "application/json")
 	itemList, err := items.itemDB.GetItemByVendorCode(uuid)
 	switch err {

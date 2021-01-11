@@ -80,7 +80,7 @@ func TestGetItemsByVendorCodeSuccess(t *testing.T) {
 func TestAddNewItemSKUPassedError(t *testing.T) {
 	item := new(Item)
 	item.SKU = uuid.New().String()
-	err := idb.AddNewItem(*item)
+	_, err := idb.AddNewItem(*item)
 	assert.Error(t, ErrSKUInCreate, err)
 }
 
@@ -97,7 +97,7 @@ func TestAddNewItemDBError(t *testing.T) {
 		Tags:              []string{"Dosa"},
 		DontMakeItAnymore: false,
 	}
-	err := idb.AddNewItem(*item)
+	_, err := idb.AddNewItem(*item)
 	assert.NotNil(t, err)
 }
 
@@ -115,7 +115,8 @@ func TestAddNewItemSuccess(t *testing.T) {
 		Tags:              []string{"Salad", "Vegetable Salad"},
 		DontMakeItAnymore: false,
 	}
-	err := idb.AddNewItem(*item)
+	sku, err := idb.AddNewItem(*item)
+	assert.NotNil(t, sku)
 	assert.Nil(t, err)
 }
 

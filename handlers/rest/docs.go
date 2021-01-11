@@ -28,6 +28,14 @@ type messageResponseWrapper struct {
 	Body GenericMessage
 }
 
+// Successfull Create or Update response
+// swagger:response createUpdateResponse
+type createUpdateResponseWrapper struct {
+	// Response message and data
+	// in: body
+	Body CreateUpdateMessage
+}
+
 // Generic error message returned as a string
 // swagger:response errorResponse
 type errorResponseWrapper struct {
@@ -54,7 +62,7 @@ type itemResponseWrapper struct {
 	}
 }
 
-// swagger:parameters deleteItem
+// swagger:parameters
 type itemIDParameterWrapper struct {
 	// The ID of the Item to be deleted from the DB
 	//in: path
@@ -75,7 +83,7 @@ type itemParamsWrapper struct {
 	Body data.Item
 }
 
-// swagger:parameters listSingleItem deleteItem
+// swagger:parameters listSingleItem
 type itemIDParamsWrapper struct {
 	// The id of the item for which the operation relates
 	// in: path
@@ -83,10 +91,18 @@ type itemIDParamsWrapper struct {
 	ID int `json:"id"`
 }
 
-// swagger:parameters listItemBySKU listItemsByVendor
-type itemUUIDParamsWrapper struct {
+// swagger:parameters listItemBySKU deleteItem
+type itemSKUParamsWrapper struct {
 	// The UUID of the item for which the operation relates
 	// in: path
 	// required: true
-	UUID string `json:"uuid"`
+	SKU string `json:"sku"`
+}
+
+// swagger:parameters listItemsByVendor
+type itemVendorCodeParamsWrapper struct {
+	// The UUID of the item for which the operation relates
+	// in: path
+	// required: true
+	VendorCode string `json:"vendorCode"`
 }

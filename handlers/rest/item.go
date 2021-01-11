@@ -28,12 +28,23 @@ func NewItems(l hclog.Logger, v *data.Validation, idb *data.ItemDB) *ItemHandler
 
 // GenericMessage holds a message string to be sent as JSON
 type GenericMessage struct {
-	Message string
+	Message string `json:"message"`
+}
+
+// CreateUpdateMessage holds message response and data to be sent as JSON
+type CreateUpdateMessage struct {
+	// Status Message
+	// example: Item Added/Updated Successfully
+	Message string `json:"message"`
+
+	// SKU UUID of item added/updated
+	// example: dca98ae0-2b9f-441c-9007-ef824f1581fd
+	SKU string `json:"sku"`
 }
 
 // ValidationError holds a slice of error messages to be sent as JSON
 type ValidationError struct {
-	Message []string
+	Message []string `json:"message"`
 }
 
 // getItemID gets the ID from the URL
@@ -51,13 +62,24 @@ func getItemID(r *http.Request) int {
 	return id
 }
 
-// getUUID gets the UUID from the URL
-func getUUID(r *http.Request) string {
+// getSKUFromRequest gets the SKU UUID from the URL
+func getSKUFromRequest(r *http.Request) string {
 	vars := mux.Vars(r)
-	uuid := vars["uuid"]
-	if uuid == "" {
+	sku := vars["sku"]
+	if sku == "" {
 		// Should never have happened
-		panic("UUID is missing/empty in the Path. Should have been handled by the router")
+		panic("SKU UUID is missing/empty in the Path. Should have been handled by the router")
 	}
-	return uuid
+	return sku
+}
+
+// getVCFromRequest gets the Vendor Code UUID from the URL
+func getVCFromRequest(r *http.Request) string {
+	vars := mux.Vars(r)
+	vc := vars["vendorCode"]
+	if vc == "" {
+		// Should never have happened
+		panic("SKU UUID is missing/empty in the Path. Should have been handled by the router")
+	}
+	return vc
 }

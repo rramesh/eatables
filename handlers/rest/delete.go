@@ -6,16 +6,16 @@ import (
 	"github.com/rramesh/eatables/data"
 )
 
-// Delete deletes an item in the DB identified by ID
+// Delete deletes an item in the DB identified by SKU UUID
 //
-// swagger:route DELETE /items/{id} items deleteItem
+// swagger:route DELETE /items/{sku} items deleteItem
 // Deleta an eatable Item
 // responses:
 //	200: messageResponse
 //  404: errorResponse
 //  501: errorResponse
 func (items *ItemHandler) Delete(rw http.ResponseWriter, r *http.Request) {
-	sku := getUUID(r)
+	sku := getSKUFromRequest(r)
 	items.l.Debug("Deleting Item", "SKU", sku)
 	err := items.itemDB.DeleteItem(sku)
 	switch err {

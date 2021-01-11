@@ -11,7 +11,7 @@ import (
 )
 
 // Update updates an item in the data store via GRPC
-func (it *ItemsGRPC) Update(ctx context.Context, req *protos.CreateOrUpdateRequest) (*protos.GenericResponse, error) {
+func (it *ItemsGRPC) Update(ctx context.Context, req *protos.CreateOrUpdateRequest) (*protos.CreateOrUpdateResponse, error) {
 	item := data.ToItem(req)
 	it.l.Debug("Updating Item (GRPC)", "SKU", item.SKU)
 	err := it.itemDB.UpdateItem(*item)
@@ -40,5 +40,5 @@ func (it *ItemsGRPC) Update(ctx context.Context, req *protos.CreateOrUpdateReque
 		it.l.Error("Error Updating Item", "error", err)
 		return nil, errg.Err()
 	}
-	return &protos.GenericResponse{Message: "Item Updated Successfully"}, nil
+	return &protos.CreateOrUpdateResponse{Message: "Item Updated Successfully", Sku: item.SKU}, nil
 }

@@ -11,8 +11,8 @@ import (
 )
 
 // Delete deletes an item in the DB identified by ID by GRPC
-func (it *ItemsGRPC) Delete(ctx context.Context, req *protos.UUIDRequest) (*protos.GenericResponse, error) {
-	sku := req.Uuid
+func (it *ItemsGRPC) Delete(ctx context.Context, req *protos.SKURequest) (*protos.GenericResponse, error) {
+	sku := req.Sku
 	it.l.Debug("Deleting Item (GRPC)", "ID", sku)
 	err := it.itemDB.DeleteItem(sku)
 	switch err {

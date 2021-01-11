@@ -89,9 +89,9 @@ func (i *ItemDB) GetItemByVendorCode(vc string) (Items, error) {
 }
 
 // AddNewItem creates a new Item to the Item DB
-func (i *ItemDB) AddNewItem(it Item) error {
+func (i *ItemDB) AddNewItem(it Item) (string, error) {
 	if it.SKU != "" {
-		return ErrSKUInCreate
+		return "", ErrSKUInCreate
 	}
 	ctx := context.Background()
 	tx, err := i.db.Begin()
@@ -103,12 +103,12 @@ func (i *ItemDB) AddNewItem(it Item) error {
 	}(tx, ctx); err != nil {
 		i.l.Error("Error inserting item into DB", "error", err)
 		_ = tx.Rollback()
-		return err
+		return "", err
 	}
 	if err := tx.Commit(); err != nil {
 		panic(err)
 	}
-	return err
+	return it.SKU, err
 }
 
 // UpdateItem updates an Item with the given ID

@@ -31,8 +31,8 @@ func (r *RESTServer) Server(v *data.Validation) *http.Server {
 	getRouter := sm.Methods(http.MethodGet).Subrouter()
 	getRouter.HandleFunc("/items", ih.ListAll)
 	getRouter.HandleFunc("/items/{id:[0-9]+}", ih.ListSingle)
-	getRouter.HandleFunc("/items/sku/{uuid}", ih.ListItemBySKU)
-	getRouter.HandleFunc("/items/vendor/{uuid}", ih.ListItemsByVendor)
+	getRouter.HandleFunc("/items/sku/{sku}", ih.ListItemBySKU)
+	getRouter.HandleFunc("/items/vendor/{vendorCode}", ih.ListItemsByVendor)
 
 	postRouter := sm.Methods(http.MethodPost).Subrouter()
 	postRouter.HandleFunc("/items", ih.Create)
@@ -43,7 +43,7 @@ func (r *RESTServer) Server(v *data.Validation) *http.Server {
 	putRouter.Use(ih.MiddlewareValidateItem)
 
 	deleteRouter := sm.Methods(http.MethodDelete).Subrouter()
-	deleteRouter.HandleFunc("/items/{uuid}", ih.Delete)
+	deleteRouter.HandleFunc("/items/{sku}", ih.Delete)
 
 	// API Documentation
 	opts := middleware.RedocOpts{SpecURL: "/swagger.yaml"}

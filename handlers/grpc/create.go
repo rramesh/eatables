@@ -12,27 +12,28 @@ import (
 )
 
 // Add creates a new item to the data store via GRPC
-func (it *ItemsGRPC) Add(ctx context.Context, req *protos.CreateOrUpdateRequest) (*protos.GenericResponse, error) {
+func (it *ItemsGRPC) Add(ctx context.Context, req *protos.CreateOrUpdateRequest) (*protos.CreateOrUpdateResponse, error) {
 	it.l.Debug("Add new item (GRPC)")
 	item := data.ToItem(req)
-	resp := &protos.GenericResponse{}
+	resp := &protos.CreateOrUpdateResponse{}
 	errs := it.v.Validate(item)
 	if len(errs) != 0 {
 		return it.validationErrorGRPC(req, resp, errs.Errors())
 	}
-	err := it.itemDB.AddNewItem(*item)
+	sku, err := it.itemDB.AddNewItem(*item)
 	if err != nil {
 		return it.validationErrorGRPC(req, resp, []string{err.Error()})
 	}
 	resp.Message = "Item Successfully Added"
+	resp.Sku = sku
 	return resp, nil
 }
 
 func (it *ItemsGRPC) validationErrorGRPC(
 	req *protos.CreateOrUpdateRequest,
-	resp *protos.GenericResponse,
+	resp *protos.CreateOrUpdateResponse,
 	errs []string,
-) (*protos.GenericResponse, error) {
+) (*protos.CreateOrUpdateResponse, error) {
 	errg := status.Newf(
 		codes.FailedPrecondition,
 		"Validation Error",
@@ -42,5 +43,6 @@ func (it *ItemsGRPC) validationErrorGRPC(
 		return nil, cpe
 	}
 	resp.Message = strings.Join(errs, ", ")
+	resp.Sku = ""
 	return resp, errg.Err()
 }

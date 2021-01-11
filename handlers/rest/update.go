@@ -11,7 +11,7 @@ import (
 // swagger:route PUT /items items updateItem
 // Update an eatable item's details
 // responses:
-//	200: messageResponse
+//	200: createUpdateResponse
 //  404: errorResponse
 //  422: errorValidation
 func (items *ItemHandler) Update(rw http.ResponseWriter, r *http.Request) {
@@ -32,6 +32,6 @@ func (items *ItemHandler) Update(rw http.ResponseWriter, r *http.Request) {
 	}
 	rw.WriteHeader(http.StatusOK)
 	rw.Header().Add("Content-Type", "application/json")
-	data.ToJSON(&GenericMessage{Message: "Item Updated Successfully"}, rw)
+	data.ToJSON(&CreateUpdateMessage{Message: "Item Updated Successfully", SKU: it.SKU}, rw)
 	items.l.Debug("Item updated successfully", "SKU", it.SKU)
 }

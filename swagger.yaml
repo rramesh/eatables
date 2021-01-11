@@ -2,6 +2,21 @@ basePath: /
 consumes:
 - application/json
 definitions:
+  CreateUpdateMessage:
+    description: CreateUpdateMessage holds message response and data to be sent as JSON
+    properties:
+      message:
+        description: Status Message
+        example: Item Added/Updated Successfully
+        type: string
+        x-go-name: Message
+      sku:
+        description: SKU UUID of item added/updated
+        example: dca98ae0-2b9f-441c-9007-ef824f1581fd
+        type: string
+        x-go-name: SKU
+    type: object
+    x-go-package: github.com/rramesh/eatables/handlers/rest
   GenericError:
     description: GenericError GenericError GenericError GenericError holds a message string to be sent as JSON
     properties:
@@ -13,17 +28,18 @@ definitions:
   GenericMessage:
     description: GenericMessage holds a message string to be sent as JSON
     properties:
-      Message:
+      message:
         type: string
+        x-go-name: Message
     type: object
-    x-go-package: github.com/rramesh/eatables/handlers
+    x-go-package: github.com/rramesh/eatables/handlers/rest
   Item:
-    description: Item defines the structure for an API Food Item
+    description: Item Item defines the structure for an API Food Item
     properties:
       availableTimes:
         description: |-
           What times this item is available.
-          Range provided as Array of map consisiting of from and to times as integers represented in minutes
+          Range provided as Array of Array of two strings
         example: '[{From: 360, To: 660}, {From: 1020, To: 1350}]'
         items:
           $ref: '#/definitions/TimeRange'
@@ -84,14 +100,14 @@ definitions:
       price:
         description: Price of this Item
         example: 75
-        format: double
+        format: float
         minimum: 0.01
         type: number
         x-go-name: Price
       sku:
         description: The SKU of this Item. UUID format
         example: b5113148-d1fc-4c17-8177-519120495b4c
-        pattern: '[a-zA-Z0-9]{36}'
+        pattern: '[a-zA-Z0-9]{12}'
         type: string
         x-go-name: SKU
       tags:
@@ -110,17 +126,17 @@ definitions:
       vendorCode:
         description: The Vendor Code of this Item. UUID format
         example: ee846edd-b2ee-4ab2-bd97-2c4246c56cf5
-        pattern: '[a-zA-Z0-9]{36}'
+        pattern: '[a-zA-Z0-9]{12}'
         type: string
         x-go-name: VendorCode
     required:
-    - description
-    - name
-    - price
     - sku
     - vendorCode
+    - name
+    - description
+    - price
     type: object
-    x-go-package: github.com/rramesh/eatables/data
+    x-go-package: github.com/rramesh/eatables/sdk/models
   TimeRange:
     description: TimeRange holds a starting and ending time
     properties:
@@ -172,7 +188,7 @@ paths:
           $ref: '#/definitions/Item'
       responses:
         "200":
-          $ref: '#/responses/messageResponse'
+          $ref: '#/responses/createUpdateResponse'
         "422":
           $ref: '#/responses/errorValidation'
         "501":
@@ -193,7 +209,7 @@ paths:
           $ref: '#/definitions/Item'
       responses:
         "200":
-          $ref: '#/responses/messageResponse'
+          $ref: '#/responses/createUpdateResponse'
         "404":
           $ref: '#/responses/errorResponse'
         "422":
@@ -201,26 +217,6 @@ paths:
       tags:
       - items
   /items/{id}:
-    delete:
-      description: Deleta an eatable Item
-      operationId: deleteItem
-      parameters:
-      - description: The id of the item for which the operation relates
-        format: int64
-        in: path
-        name: id
-        required: true
-        type: integer
-        x-go-name: ID
-      responses:
-        "200":
-          $ref: '#/responses/messageResponse'
-        "404":
-          $ref: '#/responses/errorResponse'
-        "501":
-          $ref: '#/responses/errorResponse'
-      tags:
-      - items
     get:
       description: Return a specific Eatable item from the database
       operationId: listSingleItem
@@ -239,17 +235,37 @@ paths:
           $ref: '#/responses/errorResponse'
       tags:
       - items
-  /items/sku/{uuid}:
+  /items/{sku}:
+    delete:
+      description: Deleta an eatable Item
+      operationId: deleteItem
+      parameters:
+      - description: The UUID of the item for which the operation relates
+        in: path
+        name: sku
+        required: true
+        type: string
+        x-go-name: SKU
+      responses:
+        "200":
+          $ref: '#/responses/messageResponse'
+        "404":
+          $ref: '#/responses/errorResponse'
+        "501":
+          $ref: '#/responses/errorResponse'
+      tags:
+      - items
+  /items/sku/{sku}:
     get:
       description: Returns an item by SKU (UUID)
       operationId: listItemBySKU
       parameters:
       - description: The UUID of the item for which the operation relates
         in: path
-        name: uuid
+        name: sku
         required: true
         type: string
-        x-go-name: UUID
+        x-go-name: SKU
       responses:
         "200":
           $ref: '#/responses/itemResponse'
@@ -257,17 +273,17 @@ paths:
           $ref: '#/responses/errorResponse'
       tags:
       - items
-  /items/vendor/{uuid}:
+  /items/vendor/{vendorCode}:
     get:
       description: Returns a list of items by Vendor Code (UUID)
       operationId: listItemsByVendor
       parameters:
       - description: The UUID of the item for which the operation relates
         in: path
-        name: uuid
+        name: vendorCode
         required: true
         type: string
-        x-go-name: UUID
+        x-go-name: VendorCode
       responses:
         "200":
           $ref: '#/responses/itemResponse'
@@ -278,6 +294,10 @@ paths:
 produces:
 - application/json
 responses:
+  createUpdateResponse:
+    description: Successfull Create or Update response
+    schema:
+      $ref: '#/definitions/CreateUpdateMessage'
   errorResponse:
     description: Generic error message returned as a string
     schema:
