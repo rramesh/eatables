@@ -70,10 +70,6 @@ type itemIDParameterWrapper struct {
 	ID int `json:"id"`
 }
 
-// No content is returned by this API endpoint
-// swagger:response noContentResponse
-type noContentResponseWrapper struct{}
-
 // swagger:parameters updateItem createItem
 type itemParamsWrapper struct {
 	// Item data structure to Update or Create.

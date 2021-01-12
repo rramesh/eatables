@@ -17,14 +17,6 @@ definitions:
         x-go-name: SKU
     type: object
     x-go-package: github.com/rramesh/eatables/handlers/rest
-  GenericError:
-    description: GenericError GenericError GenericError GenericError holds a message string to be sent as JSON
-    properties:
-      Message:
-        description: message
-        type: string
-    type: object
-    x-go-package: github.com/rramesh/eatables/sdk/models
   GenericMessage:
     description: GenericMessage holds a message string to be sent as JSON
     properties:
@@ -34,18 +26,19 @@ definitions:
     type: object
     x-go-package: github.com/rramesh/eatables/handlers/rest
   Item:
-    description: Item Item defines the structure for an API Food Item
+    description: Item defines the structure for an API Food Item
     properties:
       availableTimes:
         description: |-
           What times this item is available.
-          Range provided as Array of Array of two strings
-        example: '[{From: 360, To: 660}, {From: 1020, To: 1350}]'
+          Range provided as Array of map consisiting of from and to times as integers represented in minutes
+        example:
+        - from: 360
+          to: 660
+        - from: 1020
+          to: 1350
         items:
           $ref: '#/definitions/TimeRange'
-          items:
-            type: string
-          type: array
         type: array
         x-go-name: AvailableTimes
       category:
@@ -100,14 +93,14 @@ definitions:
       price:
         description: Price of this Item
         example: 75
-        format: float
+        format: double
         minimum: 0.01
         type: number
         x-go-name: Price
       sku:
         description: The SKU of this Item. UUID format
         example: b5113148-d1fc-4c17-8177-519120495b4c
-        pattern: '[a-zA-Z0-9]{12}'
+        pattern: '[a-zA-Z0-9\-]{36}'
         type: string
         x-go-name: SKU
       tags:
@@ -126,7 +119,7 @@ definitions:
       vendorCode:
         description: The Vendor Code of this Item. UUID format
         example: ee846edd-b2ee-4ab2-bd97-2c4246c56cf5
-        pattern: '[a-zA-Z0-9]{12}'
+        pattern: '[a-zA-Z0-9\-]{36}'
         type: string
         x-go-name: VendorCode
     required:
@@ -136,7 +129,7 @@ definitions:
     - description
     - price
     type: object
-    x-go-package: github.com/rramesh/eatables/sdk/models
+    x-go-package: github.com/rramesh/eatables/data
   TimeRange:
     description: TimeRange holds a starting and ending time
     properties:
@@ -151,15 +144,15 @@ definitions:
     type: object
     x-go-package: github.com/rramesh/eatables/data
   ValidationError:
-    description: ValidationError ValidationError ValidationError ValidationError holds a slice of error messages to be sent as JSON
+    description: ValidationError holds a slice of error messages to be sent as JSON
     properties:
-      Message:
-        description: message
+      message:
         items:
           type: string
         type: array
+        x-go-name: Message
     type: object
-    x-go-package: github.com/rramesh/eatables/sdk/models
+    x-go-package: github.com/rramesh/eatables/handlers/rest
 info:
   description: Documentation for Eatables API
   title: '- classification of eatables API'
@@ -320,8 +313,6 @@ responses:
     description: Generic message returned as a string
     schema:
       $ref: '#/definitions/GenericMessage'
-  noContentResponse:
-    description: No content is returned by this API endpoint
 schemes:
 - http
 swagger: "2.0"

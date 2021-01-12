@@ -16,13 +16,13 @@ type Item struct {
 
 	// The SKU of this Item. UUID format
 	// required: true
-	// pattern: [a-zA-Z0-9]{36}
+	// pattern: [a-zA-Z0-9\-]{36}
 	// example: b5113148-d1fc-4c17-8177-519120495b4c
 	SKU string `pg:",type:uuid,notnull,unique" json:"sku"`
 
 	// The Vendor Code of this Item. UUID format
 	// required: true
-	// pattern: [a-zA-Z0-9]{36}
+	// pattern: [a-zA-Z0-9\-]{36}
 	// example: ee846edd-b2ee-4ab2-bd97-2c4246c56cf5
 	VendorCode string `pg:",type:uuid,notnull" json:"vendorCode"`
 
@@ -63,7 +63,7 @@ type Item struct {
 
 	// What times this item is available.
 	// Range provided as Array of map consisiting of from and to times as integers represented in minutes
-	// example: [{From: 360, To: 660}, {From: 1020, To: 1350}]
+	// example: [{"from": 360, "to": 660}, {"from": 1020, "to": 1350}]
 	AvailableTimes []TimeRange `pg:"type:jsonb" json:"availableTimes" validate:"dive,required"`
 
 	// Tags to be associated with this Item.
